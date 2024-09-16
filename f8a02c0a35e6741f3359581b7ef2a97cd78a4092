@@ -1,0 +1,35 @@
+[33mcommit f8a02c0a35e6741f3359581b7ef2a97cd78a4092[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m)[m
+Author: Your Name <famie.project.gmail.com>
+Date:   Mon Sep 16 11:05:16 2024 -0700
+
+    Updated .gitignore to ignore additional platform-specific and system files
+
+[33mcommit 20439e052f8c5d31b4e3d5b80497ee3c54a91645[m
+Author: Your Name <famie.project.gmail.com>
+Date:   Mon Sep 16 11:02:54 2024 -0700
+
+    Add android/local.properties
+
+[33mcommit 99d48a76b731b285bd2fd3f033914a3931d59fd9[m
+Author: Your Name <famie.project.gmail.com>
+Date:   Mon Sep 16 10:59:33 2024 -0700
+
+    Updated .gitignore to include Node.js and platform-specific directories
+
+[33mcommit df8f41f2653cc4d0442e05173755cc3c5aa01aa6[m
+Author: Your Name <famie.project.gmail.com>
+Date:   Mon Sep 16 10:56:59 2024 -0700
+
+    Initial commit with all project files
+
+[33mcommit 918b980e3c109babb53a7c01eb5587aca6240199[m
+Author: Your Name <famie.project.gmail.com>
+Date:   Mon Sep 16 10:54:29 2024 -0700
+
+    first commit
+
+[33mcommit 68afbc8ceaee167013fffb281e96a838b093d832[m
+Author: Your Name <famie.project.gmail.com>
+Date:   Mon Sep 16 10:50:09 2024 -0700
+
+    first commit
