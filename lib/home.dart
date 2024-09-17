@@ -59,7 +59,7 @@ class HomeScreen extends StatelessWidget {
                 );
               },
             ),
-            MenuItem(
+           /* MenuItem(
               iconData: Icons.timer,
               title: 'Set Screen Time Schedule',
               onTap: () {
@@ -70,7 +70,7 @@ class HomeScreen extends StatelessWidget {
                   ),
                 );
               },
-            ),
+            ),*/
           ],
         ),
       ),
