@@ -18,10 +18,10 @@ class ChildProfiles extends StatefulWidget {
   });
 
   @override
-  _ChildProfilesState createState() => _ChildProfilesState();
+  ChildProfilesState createState() => ChildProfilesState();
 }
 
-class _ChildProfilesState extends State<ChildProfiles> {
+class ChildProfilesState extends State<ChildProfiles> {
   late ChildProfileManager _childProfileManager;
   List<Map<String, String>> _children = [];
   final Logger _logger = Logger('ChildProfiles');

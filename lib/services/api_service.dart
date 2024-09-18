@@ -1,8 +1,9 @@
+//filename:service/api_service.dart (for parent login and  registration )
 import 'dart:async';
-import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:logger/logger.dart';
 import 'dart:io';
+import 'package:http/http.dart' as http;
+import 'package:logger/logger.dart';
 import 'config.dart'; // Import the config file
 
 class ApiService {
@@ -96,46 +97,7 @@ class ApiService {
     }
   }
 
-  // Register child function (fixed childRegistrationId parameter)
-  // Register child function (updated childId parameter)
-Future<bool> registerChild(String parentId, String childId, String name, String avatar, String deviceName, String macAddress) async {
-  try {
-    logger.i('Registering child with API...');
-    final response = await http.post(
-      Uri.parse('${Config.baseUrl}/add-child'),
-      headers: {'Content-Type': 'application/json'},
-      body: json.encode({
-        'parentId': parentId,
-        'childId': childId, // Changed from childRegistrationId to childId
-        'name': name,
-        'avatar': avatar,
-        'deviceName': deviceName,
-        'macAddress': macAddress,
-      }),
-    ).timeout(timeoutDuration);
-
-    logger.d('Response status: ${response.statusCode}');
-    logger.d('Response body: ${response.body}');
-
-    if (response.statusCode == 201) {
-      logger.i('Child registration successful');
-      return true;
-    } else {
-      logger.e('Failed to register child: ${response.body}');
-      return false;
-    }
-  } on SocketException {
-    logger.e('No internet connection');
-    return false;
-  } on TimeoutException {
-    logger.e('Register child request timed out');
-    return false;
-  } catch (e, stackTrace) {
-    logger.e('Exception during child registration: $e', error: e, stackTrace: stackTrace);
-    return false;
-  }
-}
-
+  // Register child function removed and moved to a separate service file
 
   // Email validation
   bool _isValidEmail(String email) {

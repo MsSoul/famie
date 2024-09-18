@@ -42,7 +42,7 @@ class DatabaseService {
   }
 
   // Insert a new child profile
-  Future<void> insertChild(String parentId, String name, String avatar, String deviceName, String macAddress) async {
+ /* Future<void> insertChild(String parentId, String name, String avatar, String deviceName, String macAddress) async {
     _logger.info('Inserting child: parentId=$parentId, name=$name, avatar=$avatar, deviceName=$deviceName, macAddress=$macAddress');
     if (parentId.isEmpty || name.isEmpty || deviceName.isEmpty || macAddress.isEmpty) {
       _logger.warning('Invalid input data for insertChild');
@@ -73,7 +73,7 @@ class DatabaseService {
       _logger.severe('Failed to insert child: $e', stackTrace);
       throw Exception('Failed to insert child: $e'); // Throw an exception to handle it later
     }
-  }
+  }*/
 
   // Fetch children profiles based on parentId
   Future<List<Map<String, dynamic>>> getChildren(String parentId) async {

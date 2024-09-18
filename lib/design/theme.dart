@@ -51,21 +51,23 @@ const EdgeInsets appMargin = EdgeInsets.all(40.0);
 
 AppBar customAppBar(BuildContext context, String title, {bool isLoggedIn = false}) {
   return AppBar(
-    title: Center(
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(
-          maxHeight: kToolbarHeight * 0.8, // Constrain the height
+    backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
+    titleSpacing: 0.0, // Remove extra spacing
+    automaticallyImplyLeading: false, // Prevent default back button from shifting the content
+    title: Stack(
+      children: <Widget>[
+        Align(
+          alignment: Alignment.center, // Center the image
+          child: Image.asset(
+            'assets/image2.png', // Your logo asset path
+            height: kToolbarHeight * 0.8, // Adjust the logo size
+            fit: BoxFit.contain,
+          ),
         ),
-        child: Image.asset(
-          'assets/image2.png',
-          fit: BoxFit.contain,
-        ),
-      ),
-    ),
-    centerTitle: true,
-    actions: isLoggedIn
-        ? [
-            IconButton(
+        if (isLoggedIn) // Display action buttons only if logged in
+          Align(
+            alignment: Alignment.centerLeft, // Home icon to the left
+            child: IconButton(
               icon: const Icon(Icons.home),
               color: Colors.black,
               onPressed: () {
@@ -76,19 +78,23 @@ AppBar customAppBar(BuildContext context, String title, {bool isLoggedIn = false
                 );
               },
             ),
-            IconButton(
-              icon: const Icon(Icons.exit_to_app),
-              color: Colors.black,
-              onPressed: () {
-                Navigator.pushAndRemoveUntil(
-                  context,
-                  MaterialPageRoute(builder: (context) => const MyApp()),
-                  (Route<dynamic> route) => false,
-                );
-              },
-            ),
-          ]
-        : [],
+          ),
+        Align(
+          alignment: Alignment.centerRight, // Exit icon to the right
+          child: IconButton(
+            icon: const Icon(Icons.exit_to_app),
+            color: Colors.black,
+            onPressed: () {
+              Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(builder: (context) => const MyApp()),
+                (Route<dynamic> route) => false,
+              );
+            },
+          ),
+        ),
+      ],
+    ),
   );
 }
 
