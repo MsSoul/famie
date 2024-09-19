@@ -76,7 +76,7 @@ class DatabaseService {
   }*/
 
   // Fetch children profiles based on parentId
-  Future<List<Map<String, dynamic>>> getChildren(String parentId) async {
+ /*Future<List<Map<String, dynamic>>> getChildren(String parentId) async {
     if (parentId.isEmpty) {
       _logger.warning('Invalid parentId for getChildren');
       throw Exception('Invalid parentId');
@@ -102,10 +102,10 @@ class DatabaseService {
       _logger.severe('Failed to fetch children: $e');
       return []; // Return an empty list on error
     }
-  }
+  }*/
 
   // Insert a new app management entry
-  Future<void> insertApp(String childId, String name, String icon, bool isAllowed) async {
+  /*Future<void> insertApp(String childId, String name, String icon, bool isAllowed) async {
     if (childId.isEmpty || name.isEmpty || icon.isEmpty) {
       _logger.warning('Invalid input data for insertApp');
       throw Exception('Invalid input data');
@@ -195,27 +195,30 @@ class DatabaseService {
       _logger.severe('Failed to update app: $e');
       throw Exception('Failed to update app: $e'); // Throw an exception to handle it later
     }
-  }
+  }*/
 
   // Save time management data
-  Future<void> saveTimeManagement(List<Map<String, String>> schedules, Duration totalScreenTime) async {
-    if (schedules.isEmpty) {
-      _logger.warning('Invalid schedules data for saveTimeManagement');
-      throw Exception('Invalid schedules data');
-    }
-
-    final db = await database;
-    final collection = db.collection('time_management');
-    try {
-      _logger.info('Saving time management data to MongoDB...');
-      await collection.insertOne({
-        'schedules': schedules,
-        'total_screen_time': totalScreenTime.inMinutes,
-      });
-      _logger.info('Time management data saved successfully');
-    } catch (e) {
-      _logger.severe('Failed to save time management data: $e');
-      throw Exception('Failed to save time management data: $e'); // Throw an exception to handle it later
-    }
+  // Save time management data
+Future<void> saveTimeManagement(List<Map<String, String>> schedules, Duration totalScreenTime, String childId) async {
+  if (schedules.isEmpty) {
+    _logger.warning('Invalid schedules data for saveTimeManagement');
+    throw Exception('Invalid schedules data');
   }
+
+  final db = await database;
+  final collection = db.collection('time_management');
+  try {
+    _logger.info('Saving time management data to MongoDB...');
+    await collection.insertOne({
+      'child_id': childId,  // Add child ID here
+      'schedules': schedules,
+      'total_screen_time': totalScreenTime.inMinutes,
+    });
+    _logger.info('Time management data saved successfully for child $childId');
+  } catch (e) {
+    _logger.severe('Failed to save time management data for child $childId: $e');
+    throw Exception('Failed to save time management data: $e'); // Throw an exception to handle it later
+  }
+}
+
 }

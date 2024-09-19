@@ -1,9 +1,9 @@
 // filename:home.dart
 import 'package:flutter/material.dart';
 import 'design/theme.dart'; // Ensure you import the theme.dart file for customAppBar
-import 'child_profile/scan_child.dart'; 
-import 'dashboard/dashboard_screen.dart'; 
-import 'set_time_limit/screentimelimit.dart'; 
+import 'child_profile/scan_child.dart';
+import 'dashboard/dashboard_screen.dart';
+import 'set_time_limit/screentimelimit.dart';
 
 class HomeScreen extends StatelessWidget {
   final String parentId;
@@ -13,7 +13,12 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: customAppBar(context, 'Home Screen', isLoggedIn: true), // Using the customAppBar from theme.dart
+      appBar: customAppBar(
+        context, 
+        'Home Screen', 
+        isLoggedIn: true, 
+        parentId: parentId // Pass the parentId here
+      ), // Using the customAppBar from theme.dart
       body: Padding(
         padding: appMargin,
         child: Column(
@@ -30,6 +35,7 @@ class HomeScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 15),
+            // Register Child Menu Item
             MenuItem(
               iconData: Icons.person_add,
               title: 'Register Child',
@@ -38,15 +44,16 @@ class HomeScreen extends StatelessWidget {
                   context,
                   MaterialPageRoute(
                     builder: (context) => ChildRegistrationScreen(
-                      parentId: parentId,
+                      parentId: parentId, // Ensure parentId is passed correctly
                       onChildRegistered: (String childName, String childAvatar) {
-                        // Handle the callback here if needed
+                        // Handle the callback if needed
                       },
                     ),
                   ),
                 );
               },
             ),
+            // Dashboard Menu Item
             MenuItem(
               iconData: Icons.dashboard,
               title: 'Dashboard',
@@ -54,7 +61,24 @@ class HomeScreen extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => DashboardScreen(parentId: parentId),
+                    builder: (context) => DashboardScreen(
+                      parentId: parentId, // Ensure parentId is passed correctly
+                    ),
+                  ),
+                );
+              },
+            ),
+            // Set Screen Time Menu Item
+            MenuItem(
+              iconData: Icons.timer,
+              title: 'Set Screen Time Schedule',
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ScreenTimeLimitScreen(
+                      parentId: parentId, // Ensure parentId is passed correctly
+                    ),
                   ),
                 );
               },

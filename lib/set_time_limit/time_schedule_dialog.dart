@@ -5,12 +5,14 @@ class ScreenTimeScheduleDialog extends StatefulWidget {
   final List<Map<String, TimeOfDay>> schedules;
   final Function(TimeOfDay?, TimeOfDay?) onAddSchedule;
   final Function(int, TimeOfDay?, TimeOfDay?) onEditSchedule;
+  final String childId; // Add childId parameter
 
   const ScreenTimeScheduleDialog({
     super.key,
     required this.schedules,
     required this.onAddSchedule,
     required this.onEditSchedule,
+    required this.childId, // Pass childId here
   });
 
   @override
@@ -66,7 +68,7 @@ class ScreenTimeScheduleDialogState extends State<ScreenTimeScheduleDialog> {
         'end': schedule['end']!.format(context),
       };
     }).toList();
-    await dbHelper.saveTimeManagement(schedules, _totalScreenTime);
+    await dbHelper.saveTimeManagement(schedules, _totalScreenTime, widget.childId); // Save schedules with childId
   }
 
   @override
