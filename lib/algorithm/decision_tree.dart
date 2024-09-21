@@ -1,26 +1,44 @@
-// filename: ../algorithm/decision_tree.dart
+import 'package:logging/logging.dart';
 
-class DecisionTree {
-  final double theta1;
-  final double theta2;
+class AppDecision {
+  bool isAllowed;
+  bool setTimeSchedule;
 
-  DecisionTree({required this.theta1, required this.theta2});
+  // Create a logger instance
+  final Logger _logger = Logger('AppDecision');
 
-  String decide(double x1, double x2) {
-    if (x1 < theta1) {
-      return 'Allow';
-    } else if (x1 >= theta1 && x2 < theta2) {
-      return 'Block';
-    } else if (x1 >= theta1 && x2 >= theta2) {
-      return 'Allow';
+  AppDecision({required this.isAllowed, required this.setTimeSchedule});
+
+  String makeDecision() {
+    if (!isAllowed) {
+      _logger.info('Decision: Block App');
+      return 'Block App';
+    } else {
+      if (setTimeSchedule) {
+        _logger.info('Decision: Set App Time Schedule');
+        return 'Set App Time Schedule';
+      } else {
+        _logger.info('Decision: Allow App (No Time Schedule)');
+        return 'Allow App (No Time Schedule)';
+      }
     }
-    return 'Undefined'; // Default case, should not happen with the given conditions
   }
 }
 
-/*
-•The DecisionTree class encapsulates the decision logic.
-•The DecisionTreeScreen widget demonstrates how to use this class.
-•The decide method in the DecisionTree class implements the decision logic based on the thresholds theta1 and theta2.
-•The main function runs the app, displaying the decision based on the example input values x1 and x2.
-*/
+void main() {
+  // Set up logging
+  Logger.root.level = Level.INFO; // Set the logging level
+  Logger.root.onRecord.listen((record) {
+    print('${record.level.name}: ${record.time}: ${record.message}');
+  });
+
+  // Example scenarios
+  AppDecision decision1 = AppDecision(isAllowed: false, setTimeSchedule: false);
+  decision1.makeDecision(); // Logs: Decision: Block App
+
+  AppDecision decision2 = AppDecision(isAllowed: true, setTimeSchedule: true);
+  decision2.makeDecision(); // Logs: Decision: Set App Time Schedule
+
+  AppDecision decision3 = AppDecision(isAllowed: true, setTimeSchedule: false);
+  decision3.makeDecision(); // Logs: Decision: Allow App (No Time Schedule)
+}

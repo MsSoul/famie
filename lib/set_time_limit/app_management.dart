@@ -1,25 +1,27 @@
 // filename: app_management.dart
+// filename: app_management.dart
 import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
-import 'package:mongo_dart/mongo_dart.dart' as mongo; // Use 'as' to avoid conflicts with Flutter's State class
-import '../services/child_database_service.dart'; // Import your database service
-import '../algorithm/decision_tree.dart'; // Import the DecisionTree class
+import '../design/app_toggle_prompt.dart';
+import '../services/app_toggle_service.dart'; // Import AppToggleService for posting to app_management
+import '../services/app_service.dart'; // Import AppService for fetching from app_list
+import '../algorithm/decision_tree.dart'; // Import your Decision Tree
 
 class AppManagement extends StatefulWidget {
-  const AppManagement({super.key});
+  final String childId;
+
+  const AppManagement({super.key, required this.childId});
 
   @override
   AppManagementState createState() => AppManagementState();
 }
 
 class AppManagementState extends State<AppManagement> {
-  final DatabaseService dbHelper = DatabaseService(); // Instance of your database service
-  List<Map<String, dynamic>> apps = []; // List to store the apps fetched from MongoDB
-  bool isLoading = true; // Boolean to manage the loading state
-  final Logger _logger = Logger('AppManagement'); // Logger for debugging
-
-  // Instantiate your DecisionTree with specific theta1 and theta2 values
-  final DecisionTree decisionTree = DecisionTree(theta1: 0.5, theta2: 0.5);
+  List<Map<String, dynamic>> apps = [];
+  bool isLoading = true;
+  final Logger _logger = Logger('AppManagement');
+  final AppService appService = AppService(); // Use AppService to fetch app_list
+  final AppToggleService appToggleService = AppToggleService(); // Use AppToggleService to post to app_management
 
   @override
   void initState() {
@@ -27,241 +29,218 @@ class AppManagementState extends State<AppManagement> {
     fetchApps(); // Fetch the apps when the widget is initialized
   }
 
+  @override
+  void didUpdateWidget(covariant AppManagement oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Fetch new apps if the childId changes
+    if (oldWidget.childId != widget.childId) {
+      fetchApps();
+    }
+  }
+
+  // Fetch apps using the AppService (from app_list collection)
   void fetchApps() async {
     try {
-      _logger.info("Fetching apps...");
+      _logger.info("Fetching apps for childId: ${widget.childId}");
 
-      // Get the database instance
-      final db = await dbHelper.database;
+      List<Map<String, dynamic>> fetchedApps = await appService.fetchAppList(widget.childId);
 
-      // Access the 'app_management' collection
-      final collection = db.collection('app_management');
-
-      // Query the collection for apps (you can add additional filters here if needed)
-      final result = await collection.find().toList();
-
-      // Log the result from MongoDB
-      _logger.info('Result from MongoDB: $result');
-
-      if (result.isNotEmpty) {
-        List<Map<String, dynamic>> appList = [];
-
-        // Loop through the result documents
-        for (var app in result) {
-          appList.add({
-            'app_name': app['app_name'] ?? 'Unknown App',
-            'package_name': app['package_name'] ?? 'unknown.package',
-            'is_allowed': app['is_allowed'] ?? false,
-          });
-        }
-
-        // If the widget is still mounted, update the UI
-        if (mounted) {
-          setState(() {
-            apps = appList;
-            isLoading = false; // Stop loading once data is fetched
-          });
-        }
-
-        // Log the list of apps retrieved
-        _logger.info('Apps List: $apps');
-      } else {
-        // If no data found, stop loading and display the 'No apps found' message
-        setState(() {
-          isLoading = false;
-        });
-      }
+      setState(() {
+        apps = fetchedApps;
+        isLoading = false;
+      });
     } catch (e) {
-      // If there's an error, stop loading and log the error
       setState(() {
         isLoading = false;
       });
-      _logger.severe("Error fetching apps", e);
+      _logger.severe("Error fetching apps from app_list", e);
     }
+  }
+
+  // Toggle allowed status and integrate decision tree logic
+  void toggleAllowedStatus(int index) async {
+    bool isAllowed = apps[index]['is_allowed'] == true;
+    bool setTimeSchedule = apps[index]['set_time_schedule'] == true;
+
+    // Create a new instance of AppDecision based on the toggle states
+    AppDecision decision = AppDecision(
+      isAllowed: !isAllowed, // Toggling the current state
+      setTimeSchedule: setTimeSchedule, // Keep time schedule as is
+    );
+
+    // Get the decision from the decision tree
+    String decisionResult = decision.makeDecision();
+    _logger.info(decisionResult); // Use logger instead of print
+
+    // Handle what happens based on the decision
+    switch (decisionResult) {
+      case 'Block App':
+        // Logic to block the app
+        break;
+      case 'Set App Time Schedule':
+        // Open the scheduling dialog if the decision is to set a time schedule
+        openScheduleDialog(apps[index]['_id'], apps[index]['app_name']);
+        break;
+      case 'Allow App (No Time Schedule)':
+        // Logic to allow the app without a time schedule
+        break;
+    }
+
+    // Update the UI and send toggle state to the backend (app_management)
+    setState(() {
+      apps[index]['is_allowed'] = !isAllowed;
+    });
+
+    // Call the service to save the toggle state (post to app_management)
+    await appToggleService.updateAppToggleStatus(
+      apps[index]['_id'], // appId from app_list
+      apps[index]['is_allowed'], // Whether the app is allowed or not
+      widget.childId, // Pass childId to save in app_management
+    );
+  }
+
+  // Open the AppTogglePrompt for scheduling
+  void openScheduleDialog(String appId, String appName) {
+    showDialog(
+      context: context,
+      builder: (context) => AppTogglePrompt(
+        appId: appId,
+        childId: widget.childId,
+        appName: appName,
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    final Color appBarColor = Theme.of(context).appBarTheme.backgroundColor ?? Colors.green[200]!;
+    final TextStyle fontStyle = Theme.of(context).textTheme.bodyMedium!.copyWith(
+          fontWeight: FontWeight.bold,
+          fontSize: 18, // Set font size to 18, same as time management schedule
+        );
+
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('App Management'),
-      ),
-      body: isLoading
-          ? const Center(child: CircularProgressIndicator()) // Display a loading indicator while fetching data
-          : apps.isEmpty
-              ? const Center(child: Text("No apps found.")) // Show a message if no apps are found
-              : ListView.builder(
-                  itemCount: apps.length, // Number of apps to display
-                  itemBuilder: (context, index) {
-                    Map<String, dynamic> app = apps[index]; // Get each app from the list
-                    return ListTile(
-                      leading: Image.asset(
-                        'assets/icons/${app['package_name']}.png', // Display the app icon
-                        errorBuilder: (context, error, stackTrace) {
-                          return const Icon(Icons.apps); // Fallback icon if the image is not found
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Container(
+            color: appBarColor,
+            padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+            child: const Center(
+              child: Text(
+                'Manage Child’s Apps',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black),
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+          isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : apps.isEmpty
+                  ? const Center(child: Text("No apps found."))
+                  : Expanded(
+                      child: ListView.builder(
+                        itemCount: apps.length,
+                        itemBuilder: (context, index) {
+                          final app = apps[index];
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 2.0),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  flex: 6,
+                                  child: Text(
+                                    app['app_name'],
+                                    style: fontStyle, // Apply theme style with larger font size
+                                  ),
+                                ),
+                                Switch(
+                                  value: app['is_allowed'] == true,
+                                  activeColor: Colors.white, // Thumb color when active
+                                  activeTrackColor: Colors.green, // Track color when active
+                                  inactiveThumbColor: Colors.white, // Thumb color when inactive
+                                  inactiveTrackColor: Colors.grey[400], // Track color when inactive (with grey shade)
+                                  onChanged: (value) => toggleAllowedStatus(index),
+                                ),
+                                const SizedBox(width: 10),
+                                IconButton(
+                                  icon: const Icon(
+                                    Icons.access_time, // Clock icon
+                                    size: 40,
+                                    color: Colors.green,
+                                  ),
+                                  onPressed: () {
+                                    // Open schedule dialog
+                                    openScheduleDialog(app['_id'], app['app_name']);
+                                  },
+                                ),
+                              ],
+                            ),
+                          );
                         },
                       ),
-                      title: Text(app['app_name']), // Display the app name
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          TextButton(
-                            style: TextButton.styleFrom(
-                              backgroundColor: app['is_allowed'] ? Colors.green : Colors.grey, // Button color based on the app's allowed status
-                              foregroundColor: Colors.white,
-                            ),
-                            onPressed: () {
-                              toggleApp(app['app_name'], true); // Allow the app when the button is pressed
-                            },
-                            child: const Text('Allow'),
-                          ),
-                          const SizedBox(width: 8),
-                          TextButton(
-                            style: TextButton.styleFrom(
-                              backgroundColor: !app['is_allowed'] ? Colors.red : Colors.grey, // Button color based on the app's allowed status
-                              foregroundColor: Colors.white,
-                            ),
-                            onPressed: () {
-                              toggleApp(app['app_name'], false); // Disallow the app when the button is pressed
-                            },
-                            child: const Text('Disallow'),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                ),
+                    ),
+        ],
+      ),
     );
   }
+} 
 
-  void toggleApp(String appName, bool isAllowed) async {
-    try {
-      // Example inputs for the decision-making process, replace with actual logic
-      double x1 = 0.4; // This could be based on app usage, time, etc.
-      double x2 = 0.7; // Another parameter for decision-making
-
-      // Use the decision tree to decide the action
-      String decision = decisionTree.decide(x1, x2);
-      bool shouldAllow = decision == 'Allow';
-
-      // Update the database based on the decision
-
-//      await dbHelper.updateApp(appName, shouldAllow);
-
-      // Refresh the app list after updating
-      fetchApps();
-
-      _logger.info("Toggled app $appName to isAllowed: $shouldAllow");
-    } catch (e) {
-      _logger.severe("Error updating app", e);
-    }
-  }
-}
-
-
-/*import 'package:flutter/material.dart';
+/*
+import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
-import 'package:mongo_dart/mongo_dart.dart' as mongo; // Use 'as' to avoid conflicts with Flutter's State class
-import '../services/child_database_service.dart'; // Import your database service
-import '../algorithm/decision_tree.dart'; // Import the DecisionTree class
+import '../services/app_service.dart'; // Import your AppService
 
 class AppManagement extends StatefulWidget {
-  final String parentId;
+  final String childId;
 
-  const AppManagement({super.key, required this.parentId});
+  const AppManagement({super.key, required this.childId});
 
   @override
   AppManagementState createState() => AppManagementState();
 }
 
 class AppManagementState extends State<AppManagement> {
-  final DatabaseService dbHelper = DatabaseService(); // Instance of your database service
-  List<Map<String, dynamic>> apps = []; // List to store the apps fetched from MongoDB
-  bool isLoading = true; // Boolean to manage the loading state
-  final Logger _logger = Logger('AppManagement'); // Logger for debugging
-
-  // Instantiate your DecisionTree with specific theta1 and theta2 values
-  final DecisionTree decisionTree = DecisionTree(theta1: 0.5, theta2: 0.5);
+  List<Map<String, dynamic>> apps = [];
+  bool isLoading = true;
+  final Logger _logger = Logger('AppManagement');
+  final AppService appService = AppService(); // Initialize AppService
 
   @override
   void initState() {
     super.initState();
-    fetchChildAndApps(); // Fetch the child profiles and apps when the widget is initialized
+    fetchApps(); // Fetch the apps when the widget is initialized
   }
 
-  void fetchChildAndApps() async {
-    try {
-      _logger.info("Fetching child profiles for parentId: ${widget.parentId}");
-      List<Map<String, dynamic>> children = await dbHelper.getChildren(widget.parentId);
-
-      if (children.isNotEmpty) {
-        String childId = children.first['_id'].toString();
-        _logger.info("Child found. Fetching apps for childId: $childId");
-        fetchApps(childId); // Fetch apps for the first child
-      } else {
-        setState(() {
-          isLoading = false; // Stop loading if no children are found
-        });
-        _logger.warning("No children found for parentId: ${widget.parentId}");
-      }
-    } catch (e) {
-      setState(() {
-        isLoading = false; // Stop loading if there's an error
-      });
-      _logger.severe("Error fetching child profiles", e);
+  @override
+  void didUpdateWidget(covariant AppManagement oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Fetch new apps if the childId changes
+    if (oldWidget.childId != widget.childId) {
+      fetchApps();
     }
   }
 
-  void fetchApps(String childId) async {
+  // Fetch apps using the AppService
+  void fetchApps() async {
     try {
-      // Log the childId being used in the query
-      _logger.info('Child ID to be queried: $childId');
+      _logger.info("Fetching apps for childId: ${widget.childId}");
 
-      // Get the database instance
-      final db = await dbHelper.database;
+      List<Map<String, dynamic>> fetchedApps = await appService.fetchAppList(widget.childId);
 
-      // Access the 'app_management' collection
-      final collection = db.collection('app_management');
-
-      // Query the collection using the provided childId
-      final result = await collection.findOne(mongo.where.eq('child_id', mongo.ObjectId.parse(childId)));
-
-      // Log the result from MongoDB
-      _logger.info('Result from MongoDB: $result');
-
-      // Check if the result is not null (i.e., data was found)
-      if (result != null) {
-        List<Map<String, dynamic>> appList = [];
-
-        // Loop through the nested objects in the result document
-        result.forEach((key, value) {
-          if (key != 'child_id') { // Skip the child_id field
-            appList.add({
-              'app_name': key,
-              'package_name': value['package_name'],
-              'is_allowed': value['is_allowed'],
-            });
-          }
-        });
-
-        // If the widget is still mounted, update the UI
-        if (mounted) {
-          setState(() {
-            apps = appList;
-            isLoading = false; // Stop loading once data is fetched
-          });
+      // Sort apps by toggle state and then alphabetically within each group
+      fetchedApps.sort((a, b) {
+        if (a['is_allowed'] != b['is_allowed']) {
+          return a['is_allowed'] ? -1 : 1; // Group by is_allowed
         }
+        return a['app_name'].compareTo(b['app_name']); // Alphabetical order within each group
+      });
 
-        // Log the list of apps retrieved
-        _logger.info('Apps List: $apps');
-      } else {
-        // If no data found, stop loading and display the 'No apps found' message
-        setState(() {
-          isLoading = false;
-        });
-      }
+      setState(() {
+        apps = fetchedApps;
+        isLoading = false;
+      });
     } catch (e) {
-      // If there's an error, stop loading and log the error
       setState(() {
         isLoading = false;
       });
@@ -269,80 +248,91 @@ class AppManagementState extends State<AppManagement> {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('App Management'),
-      ),
-      body: isLoading
-          ? const Center(child: CircularProgressIndicator()) // Display a loading indicator while fetching data
-          : apps.isEmpty
-              ? const Center(child: Text("No apps found.")) // Show a message if no apps are found
-              : ListView.builder(
-                  itemCount: apps.length, // Number of apps to display
-                  itemBuilder: (context, index) {
-                    Map<String, dynamic> app = apps[index]; // Get each app from the list
-                    return ListTile(
-                      leading: Image.asset(
-                        'assets/icons/${app['package_name']}.png', // Display the app icon
-                        errorBuilder: (context, error, stackTrace) {
-                          return const Icon(Icons.apps); // Fallback icon if the image is not found
-                        },
-                      ),
-                      title: Text(app['app_name']), // Display the app name
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          TextButton(
-                            style: TextButton.styleFrom(
-                              backgroundColor: app['is_allowed'] ? Colors.green : Colors.grey, // Button color based on the app's allowed status
-                              foregroundColor: Colors.white,
-                            ),
-                            onPressed: () {
-                              toggleApp(app['app_name'], true); // Allow the app when the button is pressed
-                            },
-                            child: const Text('Allow'),
-                          ),
-                          const SizedBox(width: 8),
-                          TextButton(
-                            style: TextButton.styleFrom(
-                              backgroundColor: !app['is_allowed'] ? Colors.red : Colors.grey, // Button color based on the app's allowed status
-                              foregroundColor: Colors.white,
-                            ),
-                            onPressed: () {
-                              toggleApp(app['app_name'], false); // Disallow the app when the button is pressed
-                            },
-                            child: const Text('Disallow'),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                ),
-    );
+  // Toggle allowed status
+  void toggleAllowedStatus(int index) async {
+    bool isAllowed = apps[index]['is_allowed'] == true;
+
+    setState(() {
+      apps[index]['is_allowed'] = !isAllowed;
+      // Sort apps again after toggling
+      apps.sort((a, b) {
+        if (a['is_allowed'] != b['is_allowed']) {
+          return a['is_allowed'] ? -1 : 1;
+        }
+        return a['app_name'].compareTo(b['app_name']);
+      });
+    });
+
+    // You can send a request to the backend here to update the status if needed
   }
 
-  void toggleApp(String appName, bool isAllowed) async {
-    try {
-      // Example inputs for the decision-making process, replace with actual logic
-      double x1 = 0.4; // This could be based on app usage, time, etc.
-      double x2 = 0.7; // Another parameter for decision-making
+  @override
+  Widget build(BuildContext context) {
+    final Color appBarColor = Theme.of(context).appBarTheme.backgroundColor ?? Colors.green[200]!;
+    final TextStyle fontStyle = Theme.of(context).textTheme.bodyMedium!.copyWith(
+          fontWeight: FontWeight.bold,
+          fontSize: 18, // Set font size to 18, same as time management schedule
+        );
 
-      // Use the decision tree to decide the action
-      String decision = decisionTree.decide(x1, x2);
-      bool shouldAllow = decision == 'Allow';
-
-      // Update the database based on the decision
-      await dbHelper.updateApp(appName, shouldAllow);
-
-      // Refresh the app list after updating
-      fetchApps(widget.parentId);
-
-      _logger.info("Toggled app $appName to isAllowed: $shouldAllow");
-    } catch (e) {
-      _logger.severe("Error updating app", e);
-    }
+    return Scaffold(
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Container(
+            color: appBarColor,
+            padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+            child: const Center(
+              child: Text(
+                'Manage Child’s Apps',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black),
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+          isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : apps.isEmpty
+                  ? const Center(child: Text("No apps found."))
+                  : Expanded(
+                      child: ListView.builder(
+                        itemCount: apps.length,
+                        itemBuilder: (context, index) {
+                          final app = apps[index];
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 2.0),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  flex: 6,
+                                  child: Text(
+                                    app['app_name'],
+                                    style: fontStyle, // Apply theme style with larger font size
+                                  ),
+                                ),
+                                Switch(
+                                    value: app['is_allowed'] == true,
+                                    activeColor: Colors.white, // Thumb color when active
+                                    activeTrackColor: Colors.green, // Track color when active
+                                    inactiveThumbColor: Colors.white, // Thumb color when inactive
+                                    inactiveTrackColor: Colors.grey[400], // Track color when inactive (with grey shade)
+                                    onChanged: (value) => toggleAllowedStatus(index),
+                                    // The thumb will be white in both states, but the track color changes between active (green) and inactive (white with grey)
+                                  ),
+                                const SizedBox(width: 10),
+                                const Icon(
+                                  Icons.access_time, // Clock icon
+                                  size: 40,
+                                  color: Colors.green,
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+        ],
+      ),
+    );
   }
 }
 */

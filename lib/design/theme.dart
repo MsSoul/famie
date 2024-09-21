@@ -34,12 +34,12 @@ final ThemeData appTheme = ThemeData(
   ),
   elevatedButtonTheme: ElevatedButtonThemeData(
     style: ButtonStyle(
-      backgroundColor: MaterialStateProperty.all(Colors.green[200]),
-      foregroundColor: MaterialStateProperty.all(Colors.black),
-      textStyle: MaterialStateProperty.all(
+      backgroundColor: WidgetStateProperty.all(Colors.green[200]),
+      foregroundColor: WidgetStateProperty.all(Colors.black),
+      textStyle: WidgetStateProperty.all(
         const TextStyle(fontWeight: FontWeight.bold, fontFamily: 'Georgia'),
       ),
-      shape: MaterialStateProperty.all<RoundedRectangleBorder>(
+      shape: WidgetStateProperty.all<RoundedRectangleBorder>(
         RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(30.0),
         ),

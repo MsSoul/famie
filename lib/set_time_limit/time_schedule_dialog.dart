@@ -1,3 +1,181 @@
+//filename:set_time_limit/time_schedule_dialog
+import 'package:flutter/material.dart';
+import 'package:logger/logger.dart';  // Import logger for debugging
+import '../services/time_service.dart';  // Make sure you import your TimeService
+
+final Logger logger = Logger();  // Initialize logger
+
+class ScreenTimeScheduleDialog extends StatefulWidget {
+  final List<Map<String, TimeOfDay>> schedules;
+  final Function(TimeOfDay?, TimeOfDay?) onAddSchedule;
+  final Function(int, TimeOfDay?, TimeOfDay?) onEditSchedule;
+  final String childId;
+
+  const ScreenTimeScheduleDialog({
+    super.key,
+    required this.schedules,
+    required this.onAddSchedule,
+    required this.onEditSchedule,
+    required this.childId,
+  });
+
+  @override
+  ScreenTimeScheduleDialogState createState() => ScreenTimeScheduleDialogState();
+}
+
+class ScreenTimeScheduleDialogState extends State<ScreenTimeScheduleDialog> {
+  TimeOfDay? _beginningTime;
+  TimeOfDay? _endTime;
+
+  // Function to select time
+  Future<void> _selectTime(BuildContext context, bool isBeginningTime) async {
+    final TimeOfDay? picked = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.now(),
+      builder: (BuildContext context, Widget? child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: Colors.green,
+              onPrimary: Colors.white,
+              onSurface: Colors.black,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (picked != null) {
+      setState(() {
+        if (isBeginningTime) {
+          _beginningTime = picked;
+        } else {
+          _endTime = picked;
+        }
+      });
+    }
+  }
+
+  // Save function when check button is pressed
+  void _saveSchedule() {
+    logger.i('Check button pressed!');  // Log the button press
+
+    if (_beginningTime != null && _endTime != null) {
+      // Adding schedule to the parent widget
+      widget.onAddSchedule(_beginningTime, _endTime);
+
+      // Prepare the data to save via TimeService in 24-hour format
+List<Map<String, String>> timeSlots = [
+  {
+    'start_time': '${_beginningTime!.hour.toString().padLeft(2, '0')}:${_beginningTime!.minute.toString().padLeft(2, '0')}',
+    'end_time': '${_endTime!.hour.toString().padLeft(2, '0')}:${_endTime!.minute.toString().padLeft(2, '0')}',
+  }
+];
+
+
+      // Log the timeSlots for debugging
+      logger.i('Time Slots prepared: $timeSlots');
+
+      // Call the TimeService to save the schedule
+      TimeService().saveTimeManagement(widget.childId, timeSlots).then((_) {
+        logger.i('Schedule saved successfully!');
+        // Close the dialog after saving successfully
+        Navigator.of(context).pop();
+      }).catchError((error) {
+        logger.e('Error saving schedule: $error');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Error saving schedule. Please try again.')),
+        );
+      });
+
+    } else {
+      // Show an error if times are not selected
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select both beginning and end times')),
+      );
+    }
+  }
+
+  @override
+Widget build(BuildContext context) {
+  return AlertDialog(
+    contentPadding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0), // Reduce padding to make it more compact
+    backgroundColor: Colors.green[50],
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(15.0),
+    ),
+    title: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        IconButton(
+          icon: const Icon(Icons.close),
+          onPressed: () {
+            Navigator.of(context).pop();
+          },
+        ),
+        Flexible(
+          child: Text(
+            'Set Screen Time Schedule',
+            style: TextStyle(
+              fontSize: 18.0,
+              fontWeight: FontWeight.bold,
+              color: Colors.green[700],
+              fontFamily: 'Georgia',
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ),
+        IconButton(
+          icon: const Icon(Icons.check, color: Colors.green),
+          onPressed: _saveSchedule,  // Call the save function when check is pressed
+        ),
+      ],
+    ),
+    content: Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        ElevatedButton(
+          onPressed: () {
+            _selectTime(context, true);
+          },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.white,
+            side: const BorderSide(color: Colors.green),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+          child: Text(
+            _beginningTime != null ? _beginningTime!.format(context) : 'Beginning Time',
+            style: const TextStyle(color: Colors.black, fontSize: 16),
+          ),
+        ),
+        const SizedBox(height: 10),
+        ElevatedButton(
+          onPressed: () {
+            _selectTime(context, false);
+          },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.white,
+            side: const BorderSide(color: Colors.green),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+          child: Text(
+            _endTime != null ? _endTime!.format(context) : 'End Time',
+            style: const TextStyle(color: Colors.black, fontSize: 16),
+          ),
+        ),
+      ],
+    ),
+  );
+}
+}
+
+
+
+/*
 import 'package:flutter/material.dart';
 import '../services/child_database_service.dart';
 
@@ -354,3 +532,4 @@ class AddTimeScheduleDialogState extends State<AddTimeScheduleDialog> {
     );
   }
 }
+*/

@@ -13,10 +13,10 @@ class ScreenTimeLimitScreen extends StatefulWidget {
   const ScreenTimeLimitScreen({super.key, required this.parentId});
 
   @override
-  _ScreenTimeLimitScreenState createState() => _ScreenTimeLimitScreenState();
+  ScreenTimeLimitScreenState createState() => ScreenTimeLimitScreenState();
 }
 
-class _ScreenTimeLimitScreenState extends State<ScreenTimeLimitScreen> {
+class ScreenTimeLimitScreenState extends State<ScreenTimeLimitScreen> {
   String? selectedChildId;  // This will hold the selected child's ID
   final Logger logger = Logger();
 
