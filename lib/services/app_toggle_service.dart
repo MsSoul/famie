@@ -1,118 +1,175 @@
 //filename:services/app_toggle_service.dart 
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:logging/logging.dart'; // Import logging package
-import 'config.dart'; // Import your Config class to get the baseUrl
+import 'config.dart';
+import 'package:logging/logging.dart';
 
 class AppToggleService {
-  final String baseUrl = Config.baseUrl; // Use Config.baseUrl for the base URL
-  final Logger _logger = Logger('AppToggleService'); // Initialize the Logger
+  final String baseUrl = Config.baseUrl;
+  final Logger _logger = Logger('AppToggleService');
 
-  // Function to update the toggle status of an app in app_management
-  Future<void> updateAppToggleStatus(String appId, bool isAllowed, String childId) async {
+  // Update the app toggle status in the app_management collection
+  Future<void> updateAppToggleStatus(String packageName, bool isAllowed, String childId, String parentId) async {
     try {
+      final url = Uri.parse('$baseUrl/api/app_management/update_app_management/$packageName');
+      final headers = {
+        'Content-Type': 'application/json',
+      };
+      final body = jsonEncode({
+        'childId': childId,
+        'parentId': parentId,
+        'isAllowed': isAllowed,
+      });
+
+      _logger.info('Sending POST request to $url with body: $body');
+
+      // Send POST request to backend
       final response = await http.post(
-        Uri.parse('$baseUrl/api/app_management/$appId'), // POST request to the backend API
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'childId': childId, // Child ID to associate with the app
-          'isAllowed': isAllowed, // Whether the app is allowed or not
-        }),
+        url,
+        headers: headers,
+        body: body,
       );
 
+      // Log the response
+      _logger.info('Response Status Code: ${response.statusCode}');
+      _logger.info('Response Body: ${response.body}');
+
+      // Check if the request was successful
       if (response.statusCode == 200 || response.statusCode == 201) {
-        // Success: The app toggle was successfully updated or created in app_management
-        _logger.info('Successfully updated app toggle status for appId: $appId');
+        _logger.info('Successfully updated toggle status for packageName: $packageName with isAllowed: $isAllowed');
       } else {
-        // Error: Failed to update app toggle status
-        _logger.warning('Failed to update app toggle status. Status code: ${response.statusCode}');
+        _logger.severe('Failed to update toggle status for packageName: $packageName. Status code: ${response.statusCode}');
+        throw Exception('Failed to update toggle status');
       }
     } catch (e) {
-      // Catch any errors that occur during the HTTP request
       _logger.severe('Error updating app toggle status: $e');
+      throw Exception('Error updating app toggle status: $e');
     }
   }
 
-  // Fetch the app management data for a specific child from app_management collection (if needed)
-  /*Future<List<Map<String, dynamic>>> fetchAppManagementList(String childId) async {
+  // Save the time schedule for an app in app_time_management collection
+  Future<void> saveTimeSchedule(String packageName, String childId, List<Map<String, String>> timeSlots) async {
     try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/api/app_management?child_id=$childId'), // Fetch app data by childId
-        headers: {'Content-Type': 'application/json'},
+      final url = Uri.parse('$baseUrl/api/app_time_management/save_schedule/$packageName');
+      final headers = {
+        'Content-Type': 'application/json',
+      };
+      final body = jsonEncode({
+        'childId': childId,
+        'timeSlots': timeSlots,  // Pass time slots here to be saved in the app_time_management collection
+      });
+
+      _logger.info('Sending POST request to $url with body: $body');
+
+      // Send POST request to backend
+      final response = await http.post(
+        url,
+        headers: headers,
+        body: body,
       );
 
-      if (response.statusCode == 200) {
-        // Successfully fetched data
-        List<dynamic> appData = jsonDecode(response.body);
-        _logger.info('Successfully fetched app management list for childId: $childId');
-        return appData.map((app) => {
-          '_id': app['_id'],
-          'app_name': app['app_name'],
-          'is_allowed': app['is_allowed'] ?? false, // Get the allowed status from app_management
-        }).toList();
+      // Log the response
+      _logger.info('Response Status Code: ${response.statusCode}');
+      _logger.info('Response Body: ${response.body}');
+
+      // Check if the request was successful
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        _logger.info('Successfully saved time schedule for packageName: $packageName');
       } else {
-        // Error: Failed to fetch data
-        _logger.warning('Failed to fetch app management list. Status code: ${response.statusCode}');
-        throw Exception('Failed to fetch app management list');
+        _logger.severe('Failed to save time schedule for packageName: $packageName. Status code: ${response.statusCode}');
+        throw Exception('Failed to save time schedule');
       }
     } catch (e) {
-      // Catch any errors that occur during the HTTP request
-      _logger.severe('Error fetching app management list: $e');
-      throw Exception('Error fetching app management list');
+      _logger.severe('Error saving time schedule: $e');
+      throw Exception('Error saving time schedule: $e');
     }
-  }*/
+  }
 }
 
 /*
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:logging/logging.dart'; // Import the logging package
-import 'config.dart'; // Import your Config class to get the baseUrl
+import 'config.dart';
+import 'package:logging/logging.dart';
 
 class AppToggleService {
-  final String baseUrl = Config.baseUrl; // Use Config.baseUrl for the base URL
-  final Logger _logger = Logger('AppToggleService'); // Initialize the logger
+  final String baseUrl = Config.baseUrl;
+  final Logger _logger = Logger('AppToggleService');
 
-  // Function to update the toggle status of an app in app_management
-  Future<void> updateAppToggleStatus(String appId, bool isAllowed) async {
+  // Update the app toggle status in the app_management collection
+  Future<void> updateAppToggleStatus(String packageName, bool isAllowed, String childId, String parentId) async {
     try {
-      final response = await http.put(
-        Uri.parse('$baseUrl/api/app_management/$appId'), // Assuming this is your update route
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'is_allowed': isAllowed}), // Send whether the app is allowed or not
+      final url = Uri.parse('$baseUrl/api/app_management/update_app_management/$packageName');
+      final headers = {
+        'Content-Type': 'application/json',
+      };
+      final body = jsonEncode({
+        'childId': childId,
+        'parentId': parentId,
+        'isAllowed': isAllowed,
+      });
+
+      _logger.info('Sending POST request to $url with body: $body');
+
+      // Send POST request to backend
+      final response = await http.post(
+        url,
+        headers: headers,
+        body: body,
       );
 
-      if (response.statusCode == 200) {
-        _logger.info('Successfully updated app toggle status');
+      // Log the response
+      _logger.info('Response Status Code: ${response.statusCode}');
+      _logger.info('Response Body: ${response.body}');
+
+      // Check if the request was successful
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        _logger.info('Successfully updated toggle status for packageName: $packageName with isAllowed: $isAllowed');
       } else {
-        _logger.warning('Failed to update app toggle status. Status code: ${response.statusCode}');
+        _logger.severe('Failed to update toggle status for packageName: $packageName. Status code: ${response.statusCode}');
+        throw Exception('Failed to update toggle status');
       }
     } catch (e) {
       _logger.severe('Error updating app toggle status: $e');
+      throw Exception('Error updating app toggle status: $e');
     }
   }
 
-  // Fetch the app management data for a specific child from app_management collection
-  Future<List<Map<String, dynamic>>> fetchAppManagementList(String childId) async {
+  // Save the time schedule for an app in app_time_management collection
+  Future<void> saveTimeSchedule(String packageName, String childId, List<Map<String, String>> timeSlots) async {
     try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/api/app_management?child_id=$childId'), // Assuming this is your fetch route
-        headers: {'Content-Type': 'application/json'},
+      final url = Uri.parse('$baseUrl/api/app_time_management/save_schedule/$packageName');
+      final headers = {
+        'Content-Type': 'application/json',
+      };
+      final body = jsonEncode({
+        'childId': childId,
+        'timeSlots': timeSlots,  // Pass time slots here to be saved in the app_time_management collection
+      });
+
+      _logger.info('Sending POST request to $url with body: $body');
+
+      // Send POST request to backend
+      final response = await http.post(
+        url,
+        headers: headers,
+        body: body,
       );
 
-      if (response.statusCode == 200) {
-        List<dynamic> appData = jsonDecode(response.body);
-        return appData.map((app) => {
-          '_id': app['_id'],
-          'app_name': app['app_name'],
-          'is_allowed': app['is_allowed'] ?? false, // Fetch the allowed status from app_management
-        }).toList();
+      // Log the response
+      _logger.info('Response Status Code: ${response.statusCode}');
+      _logger.info('Response Body: ${response.body}');
+
+      // Check if the request was successful
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        _logger.info('Successfully saved time schedule for packageName: $packageName');
       } else {
-        throw Exception('Failed to fetch app management list');
+        _logger.severe('Failed to save time schedule for packageName: $packageName. Status code: ${response.statusCode}');
+        throw Exception('Failed to save time schedule');
       }
     } catch (e) {
-      _logger.severe('Error fetching app management list: $e');
-      throw Exception('Error fetching app management list');
+      _logger.severe('Error saving time schedule: $e');
+      throw Exception('Error saving time schedule: $e');
     }
   }
 }

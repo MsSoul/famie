@@ -1,5 +1,241 @@
 //filename:set_time_limit/time_schedule_dialog
 import 'package:flutter/material.dart';
+import 'package:logger/logger.dart'; // Import logger for debugging
+import '../services/time_service.dart'; // Make sure you import your TimeService
+
+final Logger logger = Logger(); // Initialize logger
+
+class ScreenTimeScheduleDialog extends StatefulWidget {
+  final List<Map<String, TimeOfDay>> schedules;
+  final Function(TimeOfDay?, TimeOfDay?) onAddSchedule;
+  final Function(int, TimeOfDay?, TimeOfDay?) onEditSchedule;
+  final String childId;
+
+  const ScreenTimeScheduleDialog({
+    super.key,
+    required this.schedules,
+    required this.onAddSchedule,
+    required this.onEditSchedule,
+    required this.childId,
+  });
+
+  @override
+  ScreenTimeScheduleDialogState createState() =>
+      ScreenTimeScheduleDialogState();
+}
+
+class ScreenTimeScheduleDialogState extends State<ScreenTimeScheduleDialog> {
+  TimeOfDay? _beginningTime;
+  TimeOfDay? _endTime;
+
+  // Function to select time
+  Future<void> _selectTime(BuildContext context, bool isBeginningTime) async {
+  final TimeOfDay? picked = await showTimePicker(
+    context: context,
+    initialTime: TimeOfDay.now(),
+    builder: (BuildContext context, Widget? child) {
+      return Theme(
+        data: Theme.of(context).copyWith(
+          colorScheme: ColorScheme.light(
+            primary: Theme.of(context).appBarTheme.backgroundColor ?? Colors.green,
+            onPrimary: Colors.white, 
+            onSurface: Colors.black, 
+          ),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Text(
+              "Select time", // Add your custom label here
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            child!, // Keep the child widget here (the time picker itself)
+          ],
+        ),
+      );
+    },
+  );
+  if (picked != null) {
+    setState(() {
+      if (isBeginningTime) {
+        _beginningTime = picked;
+      } else {
+        _endTime = picked;
+      }
+    });
+  }
+}
+
+
+  // Save function when check button is pressed
+  void _saveSchedule() {
+    logger.i('Check button pressed!'); // Log the button press
+
+    if (_beginningTime != null && _endTime != null) {
+      // Adding schedule to the parent widget
+      widget.onAddSchedule(_beginningTime, _endTime);
+
+      // Prepare the data to save via TimeService in 24-hour format
+      List<Map<String, String>> timeSlots = [
+        {
+          'start_time':
+              '${_beginningTime!.hour.toString().padLeft(2, '0')}:${_beginningTime!.minute.toString().padLeft(2, '0')}',
+          'end_time':
+              '${_endTime!.hour.toString().padLeft(2, '0')}:${_endTime!.minute.toString().padLeft(2, '0')}',
+        }
+      ];
+
+      // Log the timeSlots for debugging
+      logger.i('Time Slots prepared: $timeSlots');
+
+      // Call the TimeService to save the schedule
+      TimeService().saveTimeManagement(widget.childId, timeSlots).then((_) {
+        logger.i('Schedule saved successfully!');
+        // Close the dialog after saving successfully
+        Navigator.of(context).pop();
+      }).catchError((error) {
+        logger.e('Error saving schedule: $error');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text('Error saving schedule. Please try again.')),
+        );
+      });
+    } else {
+      // Show an error if times are not selected
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text('Please select both beginning and end times')),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final Color appBarColor =
+        Theme.of(context).appBarTheme.backgroundColor ?? Colors.green[200]!;
+
+    return AlertDialog(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
+      backgroundColor: Colors.white, // Solid white background
+      shape: RoundedRectangleBorder(
+        side: BorderSide(color: appBarColor, width: 2), // Border matching app bar color
+        borderRadius: BorderRadius.circular(15.0),
+      ),
+      title: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          IconButton(
+            icon: const Icon(Icons.close, color: Colors.red), // Red X button
+            padding: const EdgeInsets.all(0), // Remove padding
+            iconSize: 32, // Thicker icon size
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+          ),
+          const Flexible(
+            child: Text(
+              'Set Screen Time Schedule',
+              style: TextStyle(
+                fontSize: 20.0, // Larger font for the title
+                fontWeight: FontWeight.bold,
+                color: Colors.black, // Black for the title text
+                fontFamily: 'Georgia', // Using the app's theme font
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+          IconButton(
+            icon: Icon(Icons.check, color: appBarColor), // Check button with appBarColor
+            padding: const EdgeInsets.all(0), // Remove padding
+            iconSize: 32, // Thicker icon size
+            onPressed: _saveSchedule,
+          ),
+        ],
+      ),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Start Time',
+                style: TextStyle(
+                  color: Colors.black,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  _selectTime(context, true);
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.white, // White background for the button
+                  side: BorderSide(color: appBarColor), // Border matching app bar color
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                child: Text(
+                  _beginningTime != null
+                      ? _beginningTime!.format(context)
+                      : 'Set Time',
+                  style: TextStyle(
+                    color: appBarColor,
+                    fontSize: 18, // Larger font size
+                    fontWeight: FontWeight.bold, // Bold font style
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'End Time',
+                style: TextStyle(
+                  color: Colors.black,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  _selectTime(context, false);
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  side: BorderSide(color: appBarColor),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                child: Text(
+                  _endTime != null ? _endTime!.format(context) : 'Set Time',
+                  style: TextStyle(
+                    color: appBarColor,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+
+/*
+import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';  // Import logger for debugging
 import '../services/time_service.dart';  // Make sure you import your TimeService
 
@@ -173,363 +409,4 @@ Widget build(BuildContext context) {
 }
 }
 
-
-
-/*
-import 'package:flutter/material.dart';
-import '../services/child_database_service.dart';
-
-class ScreenTimeScheduleDialog extends StatefulWidget {
-  final List<Map<String, TimeOfDay>> schedules;
-  final Function(TimeOfDay?, TimeOfDay?) onAddSchedule;
-  final Function(int, TimeOfDay?, TimeOfDay?) onEditSchedule;
-  final String childId; // Add childId parameter
-
-  const ScreenTimeScheduleDialog({
-    super.key,
-    required this.schedules,
-    required this.onAddSchedule,
-    required this.onEditSchedule,
-    required this.childId, // Pass childId here
-  });
-
-  @override
-  ScreenTimeScheduleDialogState createState() => ScreenTimeScheduleDialogState();
-}
-
-class ScreenTimeScheduleDialogState extends State<ScreenTimeScheduleDialog> {
-  List<Map<String, TimeOfDay>> _schedules = [];
-  Duration _totalScreenTime = Duration.zero;
-  DatabaseService dbHelper = DatabaseService();
-
-  @override
-  void initState() {
-    super.initState();
-    _schedules = List.from(widget.schedules);
-    _calculateTotalScreenTime();
-  }
-
-  void _calculateTotalScreenTime() {
-    _totalScreenTime = Duration.zero;
-    for (var schedule in _schedules) {
-      final start = schedule['start']!;
-      final end = schedule['end']!;
-      final difference = end.hour * 60 + end.minute - (start.hour * 60 + start.minute);
-      _totalScreenTime += Duration(minutes: difference);
-    }
-  }
-
-  void _addSchedule(TimeOfDay? startTime, TimeOfDay? endTime) {
-    if (startTime != null && endTime != null) {
-      setState(() {
-        _schedules.add({'start': startTime, 'end': endTime});
-        _calculateTotalScreenTime();
-      });
-      widget.onAddSchedule(startTime, endTime);
-    }
-  }
-
-  void _editSchedule(int index, TimeOfDay? startTime, TimeOfDay? endTime) {
-    if (startTime != null && endTime != null) {
-      setState(() {
-        _schedules[index] = {'start': startTime, 'end': endTime};
-        _calculateTotalScreenTime();
-      });
-      widget.onEditSchedule(index, startTime, endTime);
-    }
-  }
-
-  Future<void> _saveSchedules() async {
-    List<Map<String, String>> schedules = _schedules.map((schedule) {
-      return {
-        'start': schedule['start']!.format(context),
-        'end': schedule['end']!.format(context),
-      };
-    }).toList();
-    await dbHelper.saveTimeManagement(schedules, _totalScreenTime, widget.childId); // Save schedules with childId
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      contentPadding: const EdgeInsets.all(16.0),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              IconButton(
-                icon: const Icon(Icons.close),
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-              ),
-              Flexible(
-                child: Text(
-                  'Set Screen Time Schedule',
-                  style: TextStyle(
-                    fontSize: 18.0,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.green[700],
-                    fontFamily: 'Georgia',
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ),
-              IconButton(
-                icon: const Icon(Icons.check, color: Colors.green),
-                onPressed: () {
-                  _saveSchedules();
-                  Navigator.of(context).pop();
-                },
-              ),
-            ],
-          ),
-          const Divider(color: Colors.green), // Moved closer to the text
-          const SizedBox(height: 5), // Adjusted spacing here
-          ..._schedules.asMap().entries.map((entry) {
-            int index = entry.key;
-            Map<String, TimeOfDay> schedule = entry.value;
-            return Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Transform.scale(
-                  scale: 0.8,
-                  child: Switch(value: true, onChanged: (value) {}),
-                ),
-                Expanded(
-                  child: Text(
-                    '${schedule['start']!.format(context)} - ${schedule['end']!.format(context)}',
-                    style: const TextStyle(color: Colors.green, fontSize: 16),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-                const SizedBox(width: 10), // Space between time and edit button
-                SizedBox(
-                  height: 24,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      showDialog(
-                        context: context,
-                        builder: (BuildContext context) {
-                          return AddTimeScheduleDialog(
-                            initialStartTime: schedule['start'],
-                            initialEndTime: schedule['end'],
-                            onAddSchedule: (startTime, endTime) {
-                              _editSchedule(index, startTime, endTime);
-                            },
-                          );
-                        },
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      padding: EdgeInsets.zero,
-                      backgroundColor: Colors.white,
-                      side: const BorderSide(color: Colors.green),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                    child: const Text(
-                      'Edit',
-                      style: TextStyle(color: Colors.black, fontSize: 12),
-                    ),
-                  ),
-                ),
-              ],
-            );
-          }),
-          const SizedBox(height: 10),
-          Center(
-            child: IconButton(
-              icon: const Icon(Icons.add_circle),
-              iconSize: 60.0,
-              color: Colors.green[200],
-              onPressed: () {
-                showDialog(
-                  context: context,
-                  builder: (BuildContext context) {
-                    return AddTimeScheduleDialog(
-                      onAddSchedule: (startTime, endTime) {
-                        _addSchedule(startTime, endTime);
-                      },
-                    );
-                  },
-                );
-              },
-            ),
-          ),
-          const SizedBox(height: 20),
-          Text(
-            'Total Screen Time: ${_totalScreenTime.inHours}h ${_totalScreenTime.inMinutes.remainder(60)}m',
-            style: TextStyle(
-              fontSize: 16.0,
-              color: Colors.green[700],
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class AddTimeScheduleDialog extends StatefulWidget {
-  final TimeOfDay? initialStartTime;
-  final TimeOfDay? initialEndTime;
-  final Function(TimeOfDay?, TimeOfDay?) onAddSchedule;
-
-  const AddTimeScheduleDialog({super.key, this.initialStartTime, this.initialEndTime, required this.onAddSchedule});
-
-  @override
-  AddTimeScheduleDialogState createState() => AddTimeScheduleDialogState();
-}
-
-class AddTimeScheduleDialogState extends State<AddTimeScheduleDialog> {
-  TimeOfDay? _beginningTime;
-  TimeOfDay? _endTime;
-
-  @override
-  void initState() {
-    super.initState();
-    _beginningTime = widget.initialStartTime;
-    _endTime = widget.initialEndTime;
-  }
-
-  Future<void> _selectTime(BuildContext context, bool isBeginningTime) async {
-    final TimeOfDay? picked = await showTimePicker(
-      context: context,
-      initialTime: TimeOfDay.now(),
-      builder: (BuildContext context, Widget? child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: Colors.green, // header background color
-              onPrimary: Colors.white, // header text color
-              onSurface: Colors.black, // body text color (clock numbers)
-            ),
-            textButtonTheme: TextButtonThemeData(
-              style: TextButton.styleFrom(
-                foregroundColor: Colors.green, // button text color
-              ),
-            ),
-            timePickerTheme: TimePickerThemeData(
-              dialBackgroundColor: Colors.white,
-              hourMinuteTextColor: WidgetStateColor.resolveWith((states) => Colors.black), // Clock numbers
-              dayPeriodTextColor: WidgetStateColor.resolveWith((states) =>
-                states.contains(WidgetState.selected) ? Colors.white : Colors.black, // AM/PM text color
-              ),
-              dayPeriodColor: WidgetStateColor.resolveWith((states) =>
-                states.contains(WidgetState.selected) ? Colors.green : Colors.transparent, // AM/PM highlight color
-              ),
-            ),
-            dialogBackgroundColor: Colors.black.withOpacity(0.5), // semi-transparent background
-          ),
-          child: child!,
-        );
-      },
-    );
-    if (picked != null && picked != (_beginningTime ?? _endTime)) {
-      setState(() {
-        if (isBeginningTime) {
-          _beginningTime = picked;
-        } else {
-          _endTime = picked;
-        }
-      });
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      contentPadding: const EdgeInsets.all(16.0),
-      backgroundColor: Colors.green[50],
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(15.0),
-      ),
-      title: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          IconButton(
-            icon: const Icon(Icons.close),
-            onPressed: () {
-              Navigator.of(context).pop();
-            },
-          ),
-          Flexible(
-            child: Text(
-              'Set Time Schedule',
-              style: TextStyle(
-                fontSize: 18.0,
-                fontWeight: FontWeight.bold,
-                color: Colors.green[700],
-                fontFamily: 'Georgia',
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.check, color: Colors.green),
-            onPressed: () {
-              widget.onAddSchedule(_beginningTime, _endTime);
-              Navigator.of(context).pop();
-            },
-          ),
-        ],
-      ),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Divider(color: Colors.green, thickness: 1.0), // Moved closer to the text
-          const SizedBox(height: 5), // Adjusted spacing here
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: () {
-                _selectTime(context, true);
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.white,
-                side: const BorderSide(color: Colors.green),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-              child: Text(
-                _beginningTime != null
-                    ? _beginningTime!.format(context)
-                    : 'Beginning Time',
-                style: const TextStyle(color: Colors.black, fontSize: 16),
-              ),
-            ),
-          ),
-          const SizedBox(height: 10), // Adjusted spacing here
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: () {
-                _selectTime(context, false);
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.white,
-                side: const BorderSide(color: Colors.green),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-              child: Text(
-                _endTime != null
-                    ? _endTime!.format(context)
-                    : 'End Time',
-                style: const TextStyle(color: Colors.black, fontSize: 16),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
 */

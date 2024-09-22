@@ -1,4 +1,4 @@
-//filename:child_profile/scan_child.dart
+//filename:child_profile/scan_child.dart (qr code scanner)
 import 'package:flutter/material.dart';
 import 'package:qr_code_scanner/qr_code_scanner.dart';
 import 'dart:convert'; // For jsonDecode

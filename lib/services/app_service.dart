@@ -1,6 +1,72 @@
 //filename:services/app_service.dart (fetching app list)
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'config.dart'; // Ensure you have Config.baseUrl set
+import 'package:logging/logging.dart';
+
+class AppService {
+  final String baseUrl = Config.baseUrl; // Use the base URL from your config
+  final Logger _logger = Logger('AppService');
+
+  // Sync apps from app_list to app_management
+  Future<void> syncAppManagement(String childId, String parentId) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/api/app_management/sync_app_management?child_id=$childId&parent_id=$parentId'),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        _logger.info('Successfully synced apps for childId: $childId');
+      } else {
+        _logger.severe('Failed to sync apps for childId: $childId. Status code: ${response.statusCode}');
+        throw Exception('Failed to sync apps');
+      }
+    } catch (e) {
+      _logger.severe('Error syncing apps for childId: $childId', e);
+      throw Exception('Error syncing apps');
+    }
+  }
+
+  // Fetch apps from app_management collection
+  Future<List<Map<String, dynamic>>> fetchAppManagement(String childId) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/api/app_management/fetch_app_management?child_id=$childId'),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        _logger.info('Successfully fetched apps for childId: $childId');
+        List<dynamic> appData = jsonDecode(response.body);
+        return appData.map((app) => {
+              '_id': app['_id'],
+              'app_name': app['app_name'],
+              'package_name': app['package_name'],
+              'is_allowed': app['is_allowed'],
+            }).toList();
+      } else if (response.statusCode == 404) {
+        _logger.warning('No apps found for childId: $childId');
+        return []; // Return an empty list if no apps are found
+      } else {
+        _logger.severe('Failed to fetch apps for childId: $childId. Status code: ${response.statusCode}');
+        throw Exception('Failed to fetch apps');
+      }
+    } catch (e) {
+      _logger.severe('Error fetching app management list for childId: $childId', e);
+      throw Exception('Error fetching app management list');
+    }
+  }
+}
+
+
+/*
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'config.dart'; // Import your Config for baseUrl
 import 'package:logger/logger.dart'; // Import the Logger package
 
@@ -65,7 +131,7 @@ class AppService {
     }
   }
 }
-
+*/
 /*
 import 'dart:convert';
 import 'package:http/http.dart' as http;

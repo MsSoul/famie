@@ -2,15 +2,17 @@
 // filename: app_management.dart
 import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
-import '../design/app_toggle_prompt.dart';
+import '../design/app_toggle_prompt.dart'; // Import AppTogglePrompt for toggling app
 import '../services/app_toggle_service.dart'; // Import AppToggleService for posting to app_management
 import '../services/app_service.dart'; // Import AppService for fetching from app_list
-import '../algorithm/decision_tree.dart'; // Import your Decision Tree
+import '../algorithm/decision_tree.dart'; // Keep the Decision Tree for logic
+import '../design/app_time_prompt_dialog.dart'; // Import the dialog for app time scheduling
 
 class AppManagement extends StatefulWidget {
   final String childId;
+  final String parentId;
 
-  const AppManagement({super.key, required this.childId});
+  const AppManagement({super.key, required this.childId, required this.parentId});
 
   @override
   AppManagementState createState() => AppManagementState();
@@ -20,8 +22,8 @@ class AppManagementState extends State<AppManagement> {
   List<Map<String, dynamic>> apps = [];
   bool isLoading = true;
   final Logger _logger = Logger('AppManagement');
-  final AppService appService = AppService(); // Use AppService to fetch app_list
-  final AppToggleService appToggleService = AppToggleService(); // Use AppToggleService to post to app_management
+  final AppService appService = AppService();
+  final AppToggleService appToggleService = AppToggleService();
 
   @override
   void initState() {
@@ -38,12 +40,14 @@ class AppManagementState extends State<AppManagement> {
     }
   }
 
-  // Fetch apps using the AppService (from app_list collection)
+  // Fetch apps using the AppService (from app_management collection)
   void fetchApps() async {
     try {
-      _logger.info("Fetching apps for childId: ${widget.childId}");
+      _logger.info("Fetching apps for childId: ${widget.childId} and parentId: ${widget.parentId}");
 
-      List<Map<String, dynamic>> fetchedApps = await appService.fetchAppList(widget.childId);
+      // Sync app_management with app_list and then fetch apps from app_management
+      await appService.syncAppManagement(widget.childId, widget.parentId); // Sync first
+      List<Map<String, dynamic>> fetchedApps = await appService.fetchAppManagement(widget.childId); // Then fetch
 
       setState(() {
         apps = fetchedApps;
@@ -53,57 +57,95 @@ class AppManagementState extends State<AppManagement> {
       setState(() {
         isLoading = false;
       });
-      _logger.severe("Error fetching apps from app_list", e);
+      _logger.severe("Error fetching apps from app_management", e);
     }
   }
 
-  // Toggle allowed status and integrate decision tree logic
+  // Toggle the allowed status and integrate decision tree logic
   void toggleAllowedStatus(int index) async {
     bool isAllowed = apps[index]['is_allowed'] == true;
-    bool setTimeSchedule = apps[index]['set_time_schedule'] == true;
+    bool newStatus = !isAllowed; // Toggle the current status
 
-    // Create a new instance of AppDecision based on the toggle states
+    // Decision tree logic
     AppDecision decision = AppDecision(
-      isAllowed: !isAllowed, // Toggling the current state
-      setTimeSchedule: setTimeSchedule, // Keep time schedule as is
+      isAllowed: newStatus,  // Pass the new status to the decision tree
+      setTimeSchedule: newStatus == true,  // Show time schedule only if new status is ON
     );
 
-    // Get the decision from the decision tree
     String decisionResult = decision.makeDecision();
-    _logger.info(decisionResult); // Use logger instead of print
+    _logger.info('Decision result: $decisionResult');
 
-    // Handle what happens based on the decision
-    switch (decisionResult) {
-      case 'Block App':
-        // Logic to block the app
-        break;
-      case 'Set App Time Schedule':
-        // Open the scheduling dialog if the decision is to set a time schedule
-        openScheduleDialog(apps[index]['_id'], apps[index]['app_name']);
-        break;
-      case 'Allow App (No Time Schedule)':
-        // Logic to allow the app without a time schedule
-        break;
+    if (decisionResult == 'Block App (Toggle OFF)') {
+      // Toggle OFF: Set is_allowed to false and update in app_management
+      setState(() {
+        apps[index]['is_allowed'] = false; // Update UI
+      });
+
+      // Update the backend with the new status (is_allowed: false)
+      await appToggleService.updateAppToggleStatus(
+        apps[index]['package_name'],
+        false, // Pass the new status (false) to the backend
+        widget.childId,
+        widget.parentId,
+      );
+      _logger.info("App ${apps[index]['app_name']} blocked (is_allowed: false)");
+
+    } else if (decisionResult == 'Allow App (No Time Schedule, Toggle ON)') {
+      // Toggle ON: Set is_allowed to true and update in app_management
+      setState(() {
+        apps[index]['is_allowed'] = true; // Update UI
+      });
+
+      // Update the backend with the new status (is_allowed: true)
+      await appToggleService.updateAppToggleStatus(
+        apps[index]['package_name'],
+        true, // Pass the new status (true) to the backend
+        widget.childId,
+        widget.parentId,
+      );
+      _logger.info("App ${apps[index]['app_name']} allowed (is_allowed: true)");
+
+    } else if (decisionResult == 'Set App Time Schedule Prompt') {
+      // Toggle ON with time schedule prompt
+      setState(() {
+        apps[index]['is_allowed'] = true; // Update UI
+      });
+
+      // Update the backend with the new status (is_allowed: true)
+      await appToggleService.updateAppToggleStatus(
+        apps[index]['package_name'],
+        true, // Pass the new status (true) to the backend
+        widget.childId,
+        widget.parentId,
+      );
+      _logger.info("App ${apps[index]['app_name']} allowed (is_allowed: true) with time schedule prompt");
+
+      // Show the time scheduling prompt after updating the backend
+      openToggleDialog(apps[index]['_id'], apps[index]['app_name']);
+    } else {
+      _logger.warning('Unexpected decision result');
     }
+  }
 
-    // Update the UI and send toggle state to the backend (app_management)
-    setState(() {
-      apps[index]['is_allowed'] = !isAllowed;
-    });
-
-    // Call the service to save the toggle state (post to app_management)
-    await appToggleService.updateAppToggleStatus(
-      apps[index]['_id'], // appId from app_list
-      apps[index]['is_allowed'], // Whether the app is allowed or not
-      widget.childId, // Pass childId to save in app_management
+  // Open the AppTogglePrompt dialog for toggling
+  void openToggleDialog(String appId, String appName) {
+    showDialog(
+      context: context,
+      barrierColor: Colors.black.withOpacity(0.5),  // Add opacity to the background
+      builder: (context) => AppTogglePrompt(
+        appId: appId,
+        childId: widget.childId,
+        appName: appName,
+      ),
     );
   }
 
-  // Open the AppTogglePrompt for scheduling
+  // Open the AppTimePromptDialog for scheduling
   void openScheduleDialog(String appId, String appName) {
     showDialog(
       context: context,
-      builder: (context) => AppTogglePrompt(
+      barrierColor: Colors.black.withOpacity(0.5),  // Add opacity to the background
+      builder: (context) => AppTimePromptDialog(
         appId: appId,
         childId: widget.childId,
         appName: appName,
@@ -155,12 +197,12 @@ class AppManagementState extends State<AppManagement> {
                                   ),
                                 ),
                                 Switch(
-                                  value: app['is_allowed'] == true,
+                                  value: app['is_allowed'] == true, // Ensure toggle reflects correct is_allowed state
                                   activeColor: Colors.white, // Thumb color when active
                                   activeTrackColor: Colors.green, // Track color when active
                                   inactiveThumbColor: Colors.white, // Thumb color when inactive
                                   inactiveTrackColor: Colors.grey[400], // Track color when inactive (with grey shade)
-                                  onChanged: (value) => toggleAllowedStatus(index),
+                                  onChanged: (value) => toggleAllowedStatus(index), // Handle toggle with decision tree
                                 ),
                                 const SizedBox(width: 10),
                                 IconButton(
@@ -170,7 +212,7 @@ class AppManagementState extends State<AppManagement> {
                                     color: Colors.green,
                                   ),
                                   onPressed: () {
-                                    // Open schedule dialog
+                                    // Open schedule dialog when clock icon is clicked
                                     openScheduleDialog(app['_id'], app['app_name']);
                                   },
                                 ),
@@ -184,17 +226,23 @@ class AppManagementState extends State<AppManagement> {
       ),
     );
   }
-} 
+}
+
+
 
 /*
 import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
-import '../services/app_service.dart'; // Import your AppService
+import '../design/app_toggle_prompt.dart'; // This import is now used
+import '../services/app_toggle_service.dart';
+import '../services/app_service.dart';
+import '../algorithm/decision_tree.dart';
 
 class AppManagement extends StatefulWidget {
   final String childId;
+  final String parentId;
 
-  const AppManagement({super.key, required this.childId});
+  const AppManagement({super.key, required this.childId, required this.parentId});
 
   @override
   AppManagementState createState() => AppManagementState();
@@ -204,18 +252,18 @@ class AppManagementState extends State<AppManagement> {
   List<Map<String, dynamic>> apps = [];
   bool isLoading = true;
   final Logger _logger = Logger('AppManagement');
-  final AppService appService = AppService(); // Initialize AppService
+  final AppService appService = AppService();
+  final AppToggleService appToggleService = AppToggleService();
 
   @override
   void initState() {
     super.initState();
-    fetchApps(); // Fetch the apps when the widget is initialized
+    fetchApps();
   }
 
   @override
   void didUpdateWidget(covariant AppManagement oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // Fetch new apps if the childId changes
     if (oldWidget.childId != widget.childId) {
       fetchApps();
     }
@@ -224,17 +272,9 @@ class AppManagementState extends State<AppManagement> {
   // Fetch apps using the AppService
   void fetchApps() async {
     try {
-      _logger.info("Fetching apps for childId: ${widget.childId}");
+      _logger.info("Fetching apps for childId: ${widget.childId} and parentId: ${widget.parentId}");
 
-      List<Map<String, dynamic>> fetchedApps = await appService.fetchAppList(widget.childId);
-
-      // Sort apps by toggle state and then alphabetically within each group
-      fetchedApps.sort((a, b) {
-        if (a['is_allowed'] != b['is_allowed']) {
-          return a['is_allowed'] ? -1 : 1; // Group by is_allowed
-        }
-        return a['app_name'].compareTo(b['app_name']); // Alphabetical order within each group
-      });
+      List<Map<String, dynamic>> fetchedApps = await appService.fetchAppManagement(widget.childId);
 
       setState(() {
         apps = fetchedApps;
@@ -244,34 +284,91 @@ class AppManagementState extends State<AppManagement> {
       setState(() {
         isLoading = false;
       });
-      _logger.severe("Error fetching apps", e);
+      _logger.severe("Error fetching apps from app_management", e);
     }
   }
 
-  // Toggle allowed status
+  // Toggle the allowed status and integrate decision tree logic
   void toggleAllowedStatus(int index) async {
-    bool isAllowed = apps[index]['is_allowed'] == true;
+  bool currentStatus = apps[index]['is_allowed'] == true; // Get current status
+  bool newStatus = !currentStatus; // Toggle the current status
 
+  // Decision tree logic
+  AppDecision decision = AppDecision(
+    isAllowed: newStatus,  // Pass the new status to the decision tree
+    setTimeSchedule: false,  // Initially set to false
+  );
+
+  String decisionResult = decision.makeDecision();
+  _logger.info('Decision result: $decisionResult');
+
+  if (decisionResult == 'Block App (Toggle OFF)') {
+    // Toggle OFF: Set is_allowed to false and update in app_management
     setState(() {
-      apps[index]['is_allowed'] = !isAllowed;
-      // Sort apps again after toggling
-      apps.sort((a, b) {
-        if (a['is_allowed'] != b['is_allowed']) {
-          return a['is_allowed'] ? -1 : 1;
-        }
-        return a['app_name'].compareTo(b['app_name']);
-      });
+      apps[index]['is_allowed'] = false; // Update UI
     });
 
-    // You can send a request to the backend here to update the status if needed
+    // Update the backend with the new status (is_allowed: false)
+    await appToggleService.updateAppToggleStatus(
+      apps[index]['package_name'],
+      false, // Pass the new status (false) to the backend
+      widget.childId,
+      widget.parentId,
+    );
+    _logger.info("App ${apps[index]['app_name']} blocked (is_allowed: false)");
+  } else if (decisionResult == 'Allow App (No Time Schedule, Toggle ON)') {
+    // Toggle ON: Set is_allowed to true and update in app_management
+    setState(() {
+      apps[index]['is_allowed'] = true; // Update UI
+    });
+
+    // Update the backend with the new status (is_allowed: true)
+    await appToggleService.updateAppToggleStatus(
+      apps[index]['package_name'],
+      true, // Pass the new status (true) to the backend
+      widget.childId,
+      widget.parentId,
+    );
+    _logger.info("App ${apps[index]['app_name']} allowed (is_allowed: true)");
+  } else if (decisionResult == 'Set App Time Schedule Prompt') {
+    // Toggle ON with time schedule prompt
+    setState(() {
+      apps[index]['is_allowed'] = true; // Update UI
+    });
+
+    // Update the backend with the new status (is_allowed: true)
+    await appToggleService.updateAppToggleStatus(
+      apps[index]['package_name'],
+      true, // Pass the new status (true) to the backend
+      widget.childId,
+      widget.parentId,
+    );
+    _logger.info("App ${apps[index]['app_name']} allowed (is_allowed: true) with time schedule prompt");
+
+    // Show the time scheduling prompt after updating the backend
+    openScheduleDialog(apps[index]['_id'], apps[index]['app_name']);
+  } else {
+    _logger.warning('Unexpected decision result');
   }
+}
+// Function to display the schedule prompt
+void openScheduleDialog(String appId, String appName) {
+  showDialog(
+    context: context,
+    builder: (context) => AppTogglePrompt(
+      appId: appId,
+      childId: widget.childId,
+      appName: appName,
+    ),
+  );
+}
 
   @override
   Widget build(BuildContext context) {
     final Color appBarColor = Theme.of(context).appBarTheme.backgroundColor ?? Colors.green[200]!;
     final TextStyle fontStyle = Theme.of(context).textTheme.bodyMedium!.copyWith(
           fontWeight: FontWeight.bold,
-          fontSize: 18, // Set font size to 18, same as time management schedule
+          fontSize: 18,
         );
 
     return Scaffold(
@@ -306,23 +403,27 @@ class AppManagementState extends State<AppManagement> {
                                   flex: 6,
                                   child: Text(
                                     app['app_name'],
-                                    style: fontStyle, // Apply theme style with larger font size
+                                    style: fontStyle,
                                   ),
                                 ),
                                 Switch(
-                                    value: app['is_allowed'] == true,
-                                    activeColor: Colors.white, // Thumb color when active
-                                    activeTrackColor: Colors.green, // Track color when active
-                                    inactiveThumbColor: Colors.white, // Thumb color when inactive
-                                    inactiveTrackColor: Colors.grey[400], // Track color when inactive (with grey shade)
-                                    onChanged: (value) => toggleAllowedStatus(index),
-                                    // The thumb will be white in both states, but the track color changes between active (green) and inactive (white with grey)
-                                  ),
+                                  value: app['is_allowed'] == true,
+                                  activeColor: Colors.white,
+                                  activeTrackColor: Colors.green,
+                                  inactiveThumbColor: Colors.white,
+                                  inactiveTrackColor: Colors.grey[400],
+                                  onChanged: (value) => toggleAllowedStatus(index),
+                                ),
                                 const SizedBox(width: 10),
-                                const Icon(
-                                  Icons.access_time, // Clock icon
-                                  size: 40,
-                                  color: Colors.green,
+                                IconButton(
+                                  icon: const Icon(
+                                    Icons.access_time,
+                                    size: 40,
+                                    color: Colors.green,
+                                  ),
+                                  onPressed: () {
+                                    openScheduleDialog(app['_id'], app['app_name']);
+                                  },
                                 ),
                               ],
                             ),
