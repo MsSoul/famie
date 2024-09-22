@@ -243,7 +243,10 @@ class _ParentSignupFormState extends State<ParentSignupForm> {
               ElevatedButton(
                 onPressed: _onSignupPressed,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green[200],
+                  backgroundColor: Theme.of(context).elevatedButtonTheme.style?.backgroundColor?.resolve({}),
+                  foregroundColor: Theme.of(context).elevatedButtonTheme.style?.foregroundColor?.resolve({}),
+                  textStyle: Theme.of(context).elevatedButtonTheme.style?.textStyle?.resolve({}),
+                  shape: Theme.of(context).elevatedButtonTheme.style?.shape?.resolve({}),
                 ),
                 child: const Text('Create'),
               ),

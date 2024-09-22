@@ -153,16 +153,18 @@ class AppTimePromptDialogState extends State<AppTimePromptDialog> {
                       ),
             const SizedBox(height: 10),
             Center(
-              child: ElevatedButton(
-                onPressed: _addNewTimeSlot,  // Call _addNewTimeSlot when pressed
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: actionColor,  // Use the same actionColor for the add button
-                  shape: const CircleBorder(),
-                  padding: const EdgeInsets.all(15),
-                ),
-                child: const Icon(Icons.add),
-              ),
-            ),
+  child: ElevatedButton(
+    onPressed: _addNewTimeSlot,  // Call _addNewTimeSlot when pressed
+    style: ElevatedButton.styleFrom(
+      backgroundColor: actionColor,  // Use the same actionColor for the add button
+      shape: RoundedRectangleBorder(  // Change to RoundedRectangleBorder
+        borderRadius: BorderRadius.circular(10),  // Set border radius to 10
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 12),  // Adjust padding for the rectangle shape
+    ),
+    child: const Icon(Icons.add),
+  ),
+),
             const SizedBox(height: 10),
             Center(
               child: Text(

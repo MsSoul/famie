@@ -165,13 +165,16 @@ class LoginScreenState extends State<LoginScreen> with SingleTickerProviderState
                 style: const TextStyle(color: Colors.black),
               ),
               const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: _login,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green[200],
+                ElevatedButton(
+                  onPressed: _login,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Theme.of(context).elevatedButtonTheme.style?.backgroundColor?.resolve({}),
+                    foregroundColor: Theme.of(context).elevatedButtonTheme.style?.foregroundColor?.resolve({}),
+                    textStyle: Theme.of(context).elevatedButtonTheme.style?.textStyle?.resolve({}),
+                    shape: Theme.of(context).elevatedButtonTheme.style?.shape?.resolve({}),
+                  ),
+                  child: const Text('Log In'),
                 ),
-                child: const Text('Log In'),
-              ),
               const SizedBox(height: 20),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,

@@ -1,5 +1,5 @@
 // filename: app_management.dart
-// filename: app_management.dart
+
 import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
 import '../design/app_toggle_prompt.dart'; // Import AppTogglePrompt for toggling app
@@ -7,6 +7,7 @@ import '../services/app_toggle_service.dart'; // Import AppToggleService for pos
 import '../services/app_service.dart'; // Import AppService for fetching from app_list
 import '../algorithm/decision_tree.dart'; // Keep the Decision Tree for logic
 import '../design/app_time_prompt_dialog.dart'; // Import the dialog for app time scheduling
+import '../design/dialog_prompt.dart'; // Import DialogPrompt to show the info to parents
 
 class AppManagement extends StatefulWidget {
   final String childId;
@@ -29,6 +30,7 @@ class AppManagementState extends State<AppManagement> {
   void initState() {
     super.initState();
     fetchApps(); // Fetch the apps when the widget is initialized
+    showLoadingDialog(); // Show the loading info dialog
   }
 
   @override
@@ -37,7 +39,13 @@ class AppManagementState extends State<AppManagement> {
     // Fetch new apps if the childId changes
     if (oldWidget.childId != widget.childId) {
       fetchApps();
+      showLoadingDialog(); // Show the loading info dialog when childId changes
     }
+  }
+
+  // Show the loading dialog
+  void showLoadingDialog() {
+    DialogPrompt.showLoading(context); // Show the loading dialog to the parent
   }
 
   // Fetch apps using the AppService (from app_management collection)
@@ -227,8 +235,6 @@ class AppManagementState extends State<AppManagement> {
     );
   }
 }
-
-
 
 /*
 import 'package:flutter/material.dart';

@@ -1,3 +1,4 @@
+//filename:design/dialog_prompts.dart (info for any parts of the apps)
 import 'package:flutter/material.dart';
 
 class DialogPrompt extends StatelessWidget {
@@ -28,6 +29,22 @@ class DialogPrompt extends StatelessWidget {
       barrierDismissible: false,
       builder: (BuildContext context) {
         return const DialogPrompt();
+      },
+    );
+  }
+
+  // New loading dialog for showing a message while fetching apps
+  static Future<void> showLoading(BuildContext context) async {
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return const AlertDialog(
+          title: Text('Fetching Apps...'),
+          content: Text(
+              'This might take a while...\n This area allows you to manage your child\'s apps, including '
+              'blocking or allowing them and setting time schedules for each specific app based on the overall screen time schedule.'),
+        );
       },
     );
   }

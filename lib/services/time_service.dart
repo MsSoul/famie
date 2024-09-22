@@ -1,3 +1,6 @@
+//fiilename:services/time_service.dart (api for time managemnt)
+
+//fiilename:services/time_service.dart (api for time managemnt)
 //fiilename:services/time_service.dart
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -103,43 +106,46 @@ class TimeService {
 
   // Add a new time slot
   void addNewTimeSlot(BuildContext context, String childId, List<Map<String, String>> timeSlots) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return ScreenTimeScheduleDialog(
-          schedules: const [],
-          childId: childId,
-          onAddSchedule: (startTime, endTime) async {
-            if (startTime != null && endTime != null) {
-              DateTime newStartTime = convertTimeOfDayToDateTime(startTime);
-              DateTime newEndTime = convertTimeOfDayToDateTime(endTime);
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return ScreenTimeScheduleDialog(
+        schedules: const [],
+        childId: childId,
+        onAddSchedule: (startTime, endTime) async {
+          if (startTime != null && endTime != null) {
+            DateTime newStartTime = convertTimeOfDayToDateTime(startTime);
+            DateTime newEndTime = convertTimeOfDayToDateTime(endTime);
 
-              // Check for time conflicts
-              if (_isTimeConflicting(newStartTime, newEndTime, timeSlots)) {
-                showErrorNotification(context, 'Time conflict detected. Please choose a different time range.');
-                return;
-              }
-
-              Map<String, String> newTimeSlot = {
-                'start_time': '${startTime.hour.toString().padLeft(2, '0')}:${startTime.minute.toString().padLeft(2, '0')}',
-                'end_time': '${endTime.hour.toString().padLeft(2, '0')}:${endTime.minute.toString().padLeft(2, '0')}',
-                'is_allowed': 'true',
-              };
-              timeSlots.add(newTimeSlot);
-
-              // Save the new slot
-              try {
-                await saveTimeManagement(childId, timeSlots);
-              } catch (e) {
-                logger.e('Error saving new time slot: $e');
-              }
+            // Check for time conflicts
+            if (_isTimeConflicting(newStartTime, newEndTime, timeSlots)) {
+              showErrorNotification(context, 'Time conflict detected. Please choose a different time range.');
+              return;
             }
-          },
-          onEditSchedule: (_, __, ___) {},
-        );
-      },
-    );
-  }
+
+            // Create a new time slot and append it to the list
+            Map<String, String> newTimeSlot = {
+              'start_time': '${startTime.hour.toString().padLeft(2, '0')}:${startTime.minute.toString().padLeft(2, '0')}',
+              'end_time': '${endTime.hour.toString().padLeft(2, '0')}:${endTime.minute.toString().padLeft(2, '0')}',
+              'is_allowed': 'true',
+            };
+
+            // Append the new slot to the list, rather than replacing an existing one
+            timeSlots.add(newTimeSlot);
+
+            // Save the updated time slots to the backend
+            try {
+              await saveTimeManagement(childId, timeSlots);
+            } catch (e) {
+              logger.e('Error saving new time slot: $e');
+            }
+          }
+        },
+        onEditSchedule: (_, __, ___) {},
+      );
+    },
+  );
+}
 
   // Edit an existing time slot with conflict detection
   void editTimeSlot(BuildContext context, String childId, List<Map<String, String>> timeSlots, int index) {
@@ -197,8 +203,7 @@ class TimeService {
     }
     return false; // No conflict
   }
-}
-
+} 
 /*
 import 'package:http/http.dart' as http;
 import 'dart:convert';

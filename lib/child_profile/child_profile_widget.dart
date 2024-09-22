@@ -76,59 +76,66 @@ class ChildProfileWidgetState extends State<ChildProfileWidget> {
   }
 
   // Build child avatar item
-  Widget _buildChildAvatar(Map<String, String> child) {
-    bool isSelected = _selectedChild != null && _selectedChild!['childId'] == child['childId'];
+  // Build child avatar item
+Widget _buildChildAvatar(Map<String, String> child) {
+  bool isSelected = _selectedChild != null && _selectedChild!['childId'] == child['childId'];
 
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          _selectedChild = child;
-          widget.onChildSelected(child['childId']!); // Pass the childId when selected
-        });
-      },
-      child: Padding(
-        padding: const EdgeInsets.all(12.0),
-        child: Column(
-          children: [
-            CircleAvatar(
-              backgroundImage: AssetImage(child['avatar'] ?? 'assets/avatar/default_avatar.png'),
-              radius: 40,
-              child: Container(
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(color: isSelected ? Colors.green : Colors.white, width: 5),
-                ),
+  // Capitalize first letter of each word in the child's name
+  String childName = (child['name'] ?? 'Unknown').split(' ').map((word) {
+    return word.isNotEmpty ? '${word[0].toUpperCase()}${word.substring(1).toLowerCase()}' : word;
+  }).join(' ');
+
+  return GestureDetector(
+    onTap: () {
+      setState(() {
+        _selectedChild = child;
+        widget.onChildSelected(child['childId']!); // Pass the childId when selected
+      });
+    },
+    child: Padding(
+      padding: const EdgeInsets.all(12.0),
+      child: Column(
+        children: [
+          CircleAvatar(
+            backgroundImage: AssetImage(child['avatar'] ?? 'assets/avatar/default_avatar.png'),
+            radius: 40,
+            child: Container(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: isSelected ? Colors.green : Colors.white, width: 5),
               ),
             ),
-            const SizedBox(height: 8),
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (isSelected)
-                  Container(
-                    width: 8,
-                    height: 8,
-                    decoration: const BoxDecoration(
-                      color: Colors.green, // Green dot for selected child
-                      shape: BoxShape.circle,
-                    ),
-                    margin: const EdgeInsets.only(right: 5),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (isSelected)
+                Container(
+                  width: 8,
+                  height: 8,
+                  decoration: const BoxDecoration(
+                    color: Colors.green, // Green dot for selected child
+                    shape: BoxShape.circle,
                   ),
-                Text(
-                  child['name'] ?? 'Unknown',
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal, // Bold for selected child
-                  ),
-                  textAlign: TextAlign.center,
+                  margin: const EdgeInsets.only(right: 5),
                 ),
-              ],
-            ),
-          ],
-        ),
+              Text(
+                childName,  // Display the capitalized name
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal, // Bold for selected child
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ],
       ),
-    );
-  }
+    ),
+  );
+}
+
 
   // Build "Add Child" button
   Widget _buildAddChildButton() {
