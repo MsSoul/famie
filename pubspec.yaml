@@ -48,8 +48,10 @@ dependencies:
   uuid: ^4.0.0
   device_info_plus: ^10.1.2
   intl: ^0.19.0
+  web_socket_channel: ^3.0.1
 
 dev_dependencies:
+  flutter_launcher_icons: ^0.13.1
   flutter_test:
     sdk: flutter
 
@@ -59,6 +61,12 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^4.0.0
+
+flutter_icons:
+  android: true
+  ios: true
+  image_path: "assets/famie_icon-removebg-preview.png"
+  adaptive_icon_background: "#FFFFFF"
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

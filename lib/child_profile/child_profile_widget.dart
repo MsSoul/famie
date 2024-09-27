@@ -44,36 +44,40 @@ class ChildProfileWidgetState extends State<ChildProfileWidget> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        _isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : Column(
-                children: [
-                  SizedBox(
-                    height: 135, // Adjust height as needed
-                    child: Scrollbar(
-                      thumbVisibility: true,
-                      child: ListView.builder(
-                        scrollDirection: Axis.horizontal,
-                        itemCount: children.length + 1, // +1 for the "Add Child" button
-                        itemBuilder: (context, index) {
-                          if (index == children.length) {
-                            return _buildAddChildButton();
-                          }
-                          return _buildChildAvatar(children[index]);
-                        },
-                      ),
+Widget build(BuildContext context) {
+  return Column(
+    children: [
+      _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : Column(
+              children: [
+                SizedBox(
+                  height: 135, // Adjust height as needed
+                  child: Scrollbar(
+                    thumbVisibility: true,
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: children.length + 1, // +1 for the "Add Child" button
+                      itemBuilder: (context, index) {
+                        if (index == children.length) {
+                          return _buildAddChildButton();
+                        }
+                        return _buildChildAvatar(children[index]);
+                      },
                     ),
                   ),
-                  const Divider(color: Colors.green, height: 2),
-                  // Removed the selected child's avatar and name below.
-                ],
-              ),
-      ],
-    );
-  }
+                ),
+               const Divider(
+  color: Colors.green,
+  height: 0.5, // Slightly reduced height to minimize space
+  thickness: 1, // Set thickness for better visibility
+),
+                // Removed the selected child's avatar and name below.
+              ],
+            ),
+    ],
+  );
+}
 
   // Build child avatar item
   // Build child avatar item

@@ -1,7 +1,7 @@
 //fiilename:services/time_service.dart (api for time managemnt)
 
-//fiilename:services/time_service.dart (api for time managemnt)
-//fiilename:services/time_service.dart
+//fiilename:services/time_service.dart 
+//fiilename:services/time_service.dart (working nani with adding new time slot)
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -105,7 +105,7 @@ class TimeService {
 
 
   // Add a new time slot
-  void addNewTimeSlot(BuildContext context, String childId, List<Map<String, String>> timeSlots) {
+ void addNewTimeSlot(BuildContext context, String childId, List<Map<String, String>> timeSlots) {
   showDialog(
     context: context,
     builder: (BuildContext context) {
@@ -146,6 +146,7 @@ class TimeService {
     },
   );
 }
+
 
   // Edit an existing time slot with conflict detection
   void editTimeSlot(BuildContext context, String childId, List<Map<String, String>> timeSlots, int index) {

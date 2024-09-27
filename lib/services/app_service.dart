@@ -2,9 +2,35 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'config.dart'; // Ensure you have Config.baseUrl set
-import 'package:logging/logging.dart';
-
+//import 'package:logging/logging.dart';
 class AppService {
+  final String baseUrl = Config.baseUrl;
+
+  Future<List<Map<String, dynamic>>> fetchAppManagement(String childId) async {
+    final url = Uri.parse('$baseUrl/api/app_management/fetch_app_management?child_id=$childId');
+
+    final response = await http.get(url);
+
+    if (response.statusCode == 200) {
+      List<dynamic> appList = jsonDecode(response.body);
+      return appList.map((app) => app as Map<String, dynamic>).toList();
+    } else {
+      throw Exception('Failed to fetch apps');
+    }
+  }
+
+  Future<void> syncAppManagement(String childId, String parentId) async {
+    final url = Uri.parse('$baseUrl/api/app_management/sync_app_management?child_id=$childId&parent_id=$parentId');
+
+    final response = await http.get(url);
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to sync apps');
+    }
+  }
+}
+
+/*class AppService {
   final String baseUrl = Config.baseUrl; // Use the base URL from your config
   final Logger _logger = Logger('AppService');
 
@@ -62,7 +88,7 @@ class AppService {
     }
   }
 }
-
+*/
 
 /*
 import 'dart:convert';

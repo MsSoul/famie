@@ -1,4 +1,4 @@
-// filename: app_management.dart
+// filename: app_management.dart (display sa apps in)
 
 import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';

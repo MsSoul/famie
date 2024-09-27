@@ -32,7 +32,7 @@ class SettingsWidgetState extends State<SettingsWidget> {
       children: [
         // Removed the top margin for "SETTINGS" text
         Text('SETTINGS', style: headerTextStyle),
-        const SizedBox(height: 3), // Adjusted spacing
+        const SizedBox(height: 0), // Adjusted spacing
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
