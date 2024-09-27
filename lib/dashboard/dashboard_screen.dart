@@ -46,7 +46,7 @@ class DashboardScreen extends StatelessWidget {
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                 color: Theme.of(context).appBarTheme.backgroundColor, // Same color as app bar
                 fontWeight: FontWeight.bold,
-                fontSize: 24,
+                fontSize: 30,
               ),
             ),
           ),
