@@ -1,34 +1,81 @@
 //filename:services/app_service.dart (fetching app list)
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:logging/logging.dart'; // Import the logging package
 import 'config.dart'; // Ensure you have Config.baseUrl set
-//import 'package:logging/logging.dart';
+
 class AppService {
   final String baseUrl = Config.baseUrl;
 
-  Future<List<Map<String, dynamic>>> fetchAppManagement(String childId) async {
+  // Logger instance
+  final Logger _logger = Logger('AppService');
+
+  AppService() {
+    // Optionally configure the root logger. This will send all logs to the console.
+    Logger.root.level = Level.ALL; // Set log level (FINE, INFO, WARNING, SEVERE)
+    Logger.root.onRecord.listen((LogRecord rec) {
+      print('${rec.level.name}: ${rec.time}: ${rec.message}');
+    });
+  }
+
+  // Fetch both user_apps and system_apps from the backend
+  Future<Map<String, List<Map<String, dynamic>>>> fetchAppManagement(String childId) async {
     final url = Uri.parse('$baseUrl/api/app_management/fetch_app_management?child_id=$childId');
 
-    final response = await http.get(url);
+    try {
+      _logger.info('Fetching app management for childId: $childId from $url');
+      final response = await http.get(url);
 
-    if (response.statusCode == 200) {
-      List<dynamic> appList = jsonDecode(response.body);
-      return appList.map((app) => app as Map<String, dynamic>).toList();
-    } else {
-      throw Exception('Failed to fetch apps');
+      if (response.statusCode == 200) {
+        _logger.info('Fetch app management successful');
+        Map<String, dynamic> appData = jsonDecode(response.body);
+
+        // Separate user_apps and system_apps
+        List<dynamic> userAppsList = appData['user_apps'] ?? [];
+        List<dynamic> systemAppsList = appData['system_apps'] ?? [];
+
+        // Convert dynamic lists to lists of maps
+        List<Map<String, dynamic>> userApps = userAppsList.map((app) => app as Map<String, dynamic>).toList();
+        List<Map<String, dynamic>> systemApps = systemAppsList.map((app) => app as Map<String, dynamic>).toList();
+
+        _logger.info('User Apps: ${userApps.length} apps fetched');
+        _logger.info('System Apps: ${systemApps.length} apps fetched');
+
+        return {
+          'user_apps': userApps,
+          'system_apps': systemApps,
+        };
+      } else {
+        _logger.warning('Failed to fetch apps. Status code: ${response.statusCode}');
+        throw Exception('Failed to fetch apps');
+      }
+    } catch (e) {
+      _logger.severe('Error fetching apps: $e');
+      throw Exception('Failed to fetch apps: $e');
     }
   }
 
+  // Sync apps from app_list to app_management in the backend
   Future<void> syncAppManagement(String childId, String parentId) async {
     final url = Uri.parse('$baseUrl/api/app_management/sync_app_management?child_id=$childId&parent_id=$parentId');
 
-    final response = await http.get(url);
+    try {
+      _logger.info('Syncing app management for childId: $childId, parentId: $parentId');
+      final response = await http.get(url);
 
-    if (response.statusCode != 200) {
-      throw Exception('Failed to sync apps');
+      if (response.statusCode == 200) {
+        _logger.info('Sync successful for childId: $childId');
+      } else {
+        _logger.warning('Failed to sync apps. Status code: ${response.statusCode}');
+        throw Exception('Failed to sync apps');
+      }
+    } catch (e) {
+      _logger.severe('Error syncing apps: $e');
+      throw Exception('Failed to sync apps: $e');
     }
   }
 }
+
 
 /*class AppService {
   final String baseUrl = Config.baseUrl; // Use the base URL from your config

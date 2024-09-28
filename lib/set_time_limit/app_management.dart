@@ -19,7 +19,8 @@ class AppManagement extends StatefulWidget {
 }
 
 class AppManagementState extends State<AppManagement> {
-  List<Map<String, dynamic>> apps = [];
+  List<Map<String, dynamic>> userApps = [];
+  List<Map<String, dynamic>> systemApps = [];
   bool isLoading = true;
   final Logger _logger = Logger('AppManagement');
   final AppService appService = AppService();
@@ -41,6 +42,11 @@ class AppManagementState extends State<AppManagement> {
     }
   }
 
+  @override
+  void dispose() {
+    super.dispose();
+  }
+
   void showLoadingDialog() {
     DialogPrompt.showLoading(context);
   }
@@ -50,23 +56,35 @@ class AppManagementState extends State<AppManagement> {
       _logger.info("Fetching apps for childId: ${widget.childId} and parentId: ${widget.parentId}");
 
       await appService.syncAppManagement(widget.childId, widget.parentId);
-      List<Map<String, dynamic>> fetchedApps = await appService.fetchAppManagement(widget.childId);
+      Map<String, List<Map<String, dynamic>>> fetchedApps = await appService.fetchAppManagement(widget.childId);
 
-      setState(() {
-        apps = fetchedApps;
-        isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          userApps = fetchedApps['user_apps'] ?? [];
+          systemApps = fetchedApps['system_apps'] ?? [];
+          isLoading = false;
+        });
+      }
     } catch (e) {
-      setState(() {
-        isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
       _logger.severe("Error fetching apps from app_management", e);
     }
   }
 
-  void toggleAllowedStatus(int index) async {
+  void toggleAllowedStatus(int index, bool isUserApp) async {
+    List<Map<String, dynamic>> apps = isUserApp ? userApps : systemApps; // Determine which list to modify
     bool isAllowed = apps[index]['is_allowed'] == true;
     bool newStatus = !isAllowed;
+
+    // If trying to turn off a system app, show the prompt dialog
+    if (!isUserApp && !newStatus) {
+      await DialogPrompt.showSystemAppRestriction(context);
+      return;
+    }
 
     AppDecision decision = AppDecision(
       isAllowed: newStatus,
@@ -138,33 +156,12 @@ class AppManagementState extends State<AppManagement> {
     ).then((value) => _logger.info("AppTogglePrompt dialog closed"));
   }
 
-  // New function to show the AppTimePromptDialog with opacity
-  void showAppTimePromptDialog(BuildContext context, String appId, String childId, String appName) {
-    _logger.info('Opening AppTimePromptDialog with opacity for $appName');
-    showDialog(
-      context: context,
-      barrierColor: Colors.black.withOpacity(0.3), // Adjust opacity as needed
-      builder: (context) {
-        return AppTimePromptDialog(
-          appId: appId,
-          childId: childId,
-          appName: appName,
-        );
-      },
-    ).then((value) => _logger.info("AppTimePromptDialog closed"));
-  }
-
-  // Update the method to use showAppTimePromptDialog
-  void openAppTimePromptScreen(String appId, String appName) {
-    showAppTimePromptDialog(context, appId, widget.childId, appName);
-  }
-
   @override
   Widget build(BuildContext context) {
     final Color appBarColor = Theme.of(context).appBarTheme.backgroundColor ?? Colors.green[200]!;
-    final TextStyle fontStyle = Theme.of(context).textTheme.bodyMedium!.copyWith(
+    final TextStyle sectionTitleStyle = Theme.of(context).textTheme.bodyLarge!.copyWith(
+          color: appBarColor,
           fontWeight: FontWeight.bold,
-          fontSize: 18,
         );
 
     return Scaffold(
@@ -184,52 +181,71 @@ class AppManagementState extends State<AppManagement> {
           const SizedBox(height: 10),
           isLoading
               ? const Center(child: CircularProgressIndicator())
-              : apps.isEmpty
+              : userApps.isEmpty && systemApps.isEmpty
                   ? const Center(child: Text("No apps found."))
                   : Expanded(
-                      child: ListView.builder(
-                        itemCount: apps.length,
-                        itemBuilder: (context, index) {
-                          final app = apps[index];
-                          return Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 2.0),
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  flex: 6,
-                                  child: Text(
-                                    app['app_name'] ?? 'Unknown App',
-                                    style: fontStyle,
-                                  ),
-                                ),
-                                Switch(
-                                  value: app['is_allowed'] == true,
-                                  activeColor: Colors.white,
-                                  activeTrackColor: Colors.green,
-                                  inactiveThumbColor: Colors.white,
-                                  inactiveTrackColor: Colors.grey[400],
-                                  onChanged: (value) => toggleAllowedStatus(index),
-                                ),
-                                const SizedBox(width: 10),
-                                IconButton(
-                                  icon: const Icon(
-                                    Icons.access_time,
-                                    size: 40,
-                                    color: Colors.green,
-                                  ),
-                                  onPressed: () {
-                                    openAppTimePromptScreen(app['_id'] ?? '', app['app_name'] ?? 'Unknown App');
-                                  },
-                                ),
-                              ],
-                            ),
-                          );
-                        },
+                      child: ListView(
+                        children: [
+                          // User Installed Apps
+                          Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Text("User Installed Apps", style: sectionTitleStyle),
+                          ),
+                          ...userApps.map((app) => appRow(app, true)).toList(),
+                          Divider(color: appBarColor),
+                          // System Apps
+                          Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Text("System Apps", style: sectionTitleStyle),
+                          ),
+                          ...systemApps.map((app) => appRow(app, false)).toList(),
+                        ],
                       ),
                     ),
         ],
       ),
     );
+  }
+
+  Widget appRow(Map<String, dynamic> app, bool isUserApp) {
+    final TextStyle fontStyle = Theme.of(context).textTheme.bodyMedium!.copyWith(
+          fontWeight: FontWeight.bold,
+          fontSize: 18,
+        );
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 2.0),
+      child: Row(
+        children: [
+          Expanded(
+            flex: 6,
+            child: Text(app['app_name'] ?? 'Unknown App', style: fontStyle),
+          ),
+          Switch(
+            value: app['is_allowed'] == true,
+            activeColor: Colors.white,
+            activeTrackColor: Colors.green,
+            inactiveThumbColor: Colors.white,
+            inactiveTrackColor: Colors.grey[400],
+            onChanged: (value) => toggleAllowedStatus(
+              isUserApp ? userApps.indexOf(app) : systemApps.indexOf(app),
+              isUserApp,
+            ),
+          ),
+          const SizedBox(width: 10),
+          IconButton(
+            icon: const Icon(Icons.access_time, size: 40, color: Colors.green),
+            onPressed: () {
+              openAppTimePromptScreen(app['_id'] ?? '', app['app_name'] ?? 'Unknown App');
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  void openAppTimePromptScreen(String appId, String appName) {
+    showAppTimePromptDialog(context, appId, widget.childId, appName);
   }
 }
 
