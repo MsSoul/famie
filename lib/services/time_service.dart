@@ -117,9 +117,7 @@ Future<List<Map<String, String>>> fetchTimeSlots(String childId) async {
       rethrow;
     }
   }
-
-  // Add a new time slot
-  // Add a new time slot
+  
 void addNewTimeSlot(BuildContext context, String childId, List<Map<String, String>> timeSlots) {
   showDialog(
     context: context,
@@ -127,7 +125,7 @@ void addNewTimeSlot(BuildContext context, String childId, List<Map<String, Strin
       return ScreenTimeScheduleDialog(
         schedules: const [], // Empty schedule list for the dialog initially
         childId: childId,
-        onAddSchedule: (startTime, endTime) async {
+        onAddSchedule: (TimeOfDay? startTime, TimeOfDay? endTime) {
           if (startTime != null && endTime != null) {
             DateTime newStartTime = convertTimeOfDayToDateTime(startTime);
             DateTime newEndTime = convertTimeOfDayToDateTime(endTime);
@@ -138,11 +136,18 @@ void addNewTimeSlot(BuildContext context, String childId, List<Map<String, Strin
               return;
             }
 
+            // Define allowedHours here (hardcoded for now, you can modify it to get it dynamically)
+            int allowedHours = 1; // Example: 1 hour
+
+            // Convert allowedHours to seconds
+            int allowedTimeInSeconds = (allowedHours * 3600).toInt();  // Calculate allowed time in seconds
+
             // Create a new time slot object
             Map<String, String> newTimeSlot = {
               'start_time': '${startTime.hour.toString().padLeft(2, '0')}:${startTime.minute.toString().padLeft(2, '0')}',
               'end_time': '${endTime.hour.toString().padLeft(2, '0')}:${endTime.minute.toString().padLeft(2, '0')}',
               'is_allowed': 'true',
+              'allowed_time': allowedTimeInSeconds.toString(),  // Store allowed time in seconds
             };
 
             // Check for duplicate time slots before adding
@@ -151,33 +156,19 @@ void addNewTimeSlot(BuildContext context, String childId, List<Map<String, Strin
               return;
             }
 
-            try {
-              // Add only the new time slot without duplicating the existing ones
-              List<Map<String, String>> updatedTimeSlots = List.from(timeSlots);
-              updatedTimeSlots.add(newTimeSlot);
+            // Add only the new time slot without duplicating the existing ones
+            List<Map<String, String>> updatedTimeSlots = List.from(timeSlots);
+            updatedTimeSlots.add(newTimeSlot);
 
-              // Save the updated time slots in the backend
-              await saveTimeManagement(childId, updatedTimeSlots);
+            // Update the state synchronously
+            timeSlots.clear();
+            timeSlots.addAll(updatedTimeSlots);
 
-              // Re-fetch the time slots from the backend after saving
-              final refreshedTimeSlots = await fetchTimeSlots(childId);
-
-              // Clear the old time slots and replace them with updated ones
-              timeSlots.clear();
-              timeSlots.addAll(refreshedTimeSlots); // Replace existing list with fetched list
-
-              // Notify the user of success
-              if (context.mounted) {
-                addTimeSuccessPrompt(context, onPromptClosed: () {
-                  Navigator.of(context).pop(); // Close the dialog
-                  Navigator.of(context).pop(); // Close the schedule dialog
-                });
-              }
-
-            } catch (e) {
-              logger.e('Error saving new time slot: $e');
-              showErrorNotification(context, 'Error saving new time slot. Please try again.');
-            }
+            // Notify the user of success
+            addTimeSuccessPrompt(context, onPromptClosed: () {
+              Navigator.of(context).pop(); // Close the dialog
+              Navigator.of(context).pop(); // Close the schedule dialog
+            });
           }
         },
         onEditSchedule: (_, __, ___) {},
