@@ -9,7 +9,7 @@ class ThemeService {
 
   Future<ThemeData> fetchTheme(String adminId) async {
   try {
-    final response = await http.get(Uri.parse('${Config.baseUrl}/theme/$adminId'));
+    final response = await http.get(Uri.parse('${Config.baseUrl}/api/theme/$adminId'));
     logger.d('Response status: ${response.statusCode}');
     logger.d('Response body: ${response.body}');
     

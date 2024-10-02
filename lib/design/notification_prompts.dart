@@ -1,35 +1,72 @@
 //filename:design/notification_prompts.dart
 import 'package:flutter/material.dart';
+import '../main.dart';
 
 // Success prompt for logging in
 void showSuccessPrompt(BuildContext context) {
+  // Get the theme's app bar color and text styles
+  final appBarColor = Theme.of(context).appBarTheme.backgroundColor;
+  final textColor = Theme.of(context).textTheme.bodyMedium?.color;
+  final textFontFamily = Theme.of(context).textTheme.bodyMedium?.fontFamily;
+
   showDialog(
     context: context,
     builder: (context) {
-      return AlertDialog(
-        backgroundColor: Colors.white,
-        title: const Text('Congratulations!'),
-        content: const Text('Welcome to Famie, you successfully created an account. Proceed to login.'),
-        actionsAlignment: MainAxisAlignment.center,
-        actions: <Widget>[
-          ElevatedButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.green[200],
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(30.0),
+      return Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(15),
+          side: BorderSide(color: appBarColor!), // Use the app bar color for the border
+        ),
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Text(
+                'Congratulations!',
+                style: TextStyle(
+                  fontSize: 18.0,
+                  fontWeight: FontWeight.bold,
+                  fontFamily: textFontFamily, // Use the theme font family
+                  color: textColor, // Use the theme text color
+                ),
               ),
-              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
-            ),
-            child: const Text('Log In', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 10),
+              Text(
+                'Welcome to Famie, you successfully created an account. Proceed to login.',
+                style: TextStyle(
+                  fontFamily: textFontFamily, // Use the theme font family
+                  color: textColor, // Use the theme text color
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.of(context).pop(); // Close the dialog
+                  // After closing the dialog, navigate to the login screen
+                  Navigator.of(context).pushReplacement(
+                    MaterialPageRoute(builder: (context) => const LoginScreen()),
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  // Use the button style from the theme
+                  backgroundColor: Theme.of(context).elevatedButtonTheme.style?.backgroundColor?.resolve({}),
+                  foregroundColor: Theme.of(context).elevatedButtonTheme.style?.foregroundColor?.resolve({}),
+                  textStyle: Theme.of(context).elevatedButtonTheme.style?.textStyle?.resolve({}),
+                  shape: Theme.of(context).elevatedButtonTheme.style?.shape?.resolve({}),
+                  padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
+                ),
+                child: const Text('Log In'),
+              ),
+            ],
           ),
-        ],
+        ),
       );
     },
   );
 }
+
 
 //notification prompt for deleting schedule
 void showDeleteConfirmationPrompt(BuildContext context, Function onConfirmDelete) {
