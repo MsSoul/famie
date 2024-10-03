@@ -74,9 +74,29 @@ flutter_icons:
 # The following section is specific to Flutter packages.
 flutter:
   assets:
-  - assets/image2.png
-  - assets/avatar/boy.jfif
-  - assets/avatar/girl.jfif
+    - assets/image2.png
+    - assets/avatar/boy.jfif
+    - assets/avatar/girl.jfif
+
+  fonts:
+    - family: IBM Plex Mono
+      fonts:
+        - asset: assets/fonts/IBM_Plex_Mono/IBMPlexMono-Regular.ttf
+        - asset: assets/fonts/IBM_Plex_Mono/IBMPlexMono-Bold.ttf
+          weight: 700
+
+    - family: Playfair Display
+      fonts:
+        - asset: assets/fonts/Playfair_Display/PlayfairDisplay-Regular.ttf
+        - asset: assets/fonts/Playfair_Display/PlayfairDisplay-Bold.ttf
+          weight: 700
+
+    - family: Roboto Condensed
+      fonts:
+        - asset: assets/fonts/Roboto_Condensed/RobotoCondensed-Regular.ttf
+        - asset: assets/fonts/Roboto_Condensed/RobotoCondensed-Bold.ttf
+          weight: 700
+
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in
