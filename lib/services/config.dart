@@ -1,5 +1,5 @@
 // filename: services/config.dart
 class Config {
-  //static const String baseUrl = 'http://192.168.100.235:15014';
-   static const String baseUrl = 'http://192.168.1.7:5504';
+  static const String baseUrl = 'http://192.168.100.235:4451';
+   //static const String baseUrl = 'http://192.168.78.226:5576';
 }

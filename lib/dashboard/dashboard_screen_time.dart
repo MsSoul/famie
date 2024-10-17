@@ -99,7 +99,7 @@ class DashboardScreenTimeState extends State<DashboardScreenTime> {
                       : hasError
                           ? const Center(child: Text("Failed to load data"))
                           : (timeSchedule == null || remainingTime == null)
-                              ? const Center(child: Text("No data available"))
+                              ? const Center(child: Text("No Schedule Available"))
                               : SingleChildScrollView(child: _buildTimeData()),
                 ),
               ],

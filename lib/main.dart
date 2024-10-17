@@ -8,9 +8,10 @@ import 'services/theme_service.dart';
 import 'design/theme.dart';
 import 'signup_form.dart';
 import 'home.dart';
+import 'forgot_password.dart';
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized(); // Ensure all bindings are initialized
+  WidgetsFlutterBinding.ensureInitialized(); 
   runApp(const MyApp());
 }
 
@@ -250,6 +251,28 @@ class LoginScreenState extends State<LoginScreen> with SingleTickerProviderState
                     ),
                   ],
                 ),
+                Row(
+  mainAxisAlignment: MainAxisAlignment.center,
+  children: [
+    GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const ForgotPasswordScreen()),
+        );
+      },
+      child: Text(
+        "Forgot Password?",
+        style: TextStyle(
+          fontWeight: FontWeight.bold,
+          fontSize: 16.0,
+          color: appBarColor, // Use the AppBar color for this link
+          decoration: TextDecoration.underline,
+        ),
+      ),
+    ),
+  ],
+),
               ],
             ),
           ),

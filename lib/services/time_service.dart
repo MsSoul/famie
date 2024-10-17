@@ -45,7 +45,6 @@ class TimeService {
   }
 
   // Fetch time slots for a child
-  // Fetch time slots for a child
 Future<List<Map<String, String>>> fetchTimeSlots(String childId) async {
   try {
     final response = await http.get(Uri.parse('${Config.baseUrl}/api/time_management/$childId'));

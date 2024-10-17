@@ -96,6 +96,43 @@ class ApiService {
       return {'success': false, 'message': 'An error occurred'};
     }
   }
+  // Add the reset password function
+Future<bool> resetPassword(String email) async {
+  if (!_isValidEmail(email)) {
+    logger.e('Invalid email format');
+    throw Exception('Invalid email format');
+  }
+
+  try {
+    final response = await http.post(
+      Uri.parse('${Config.baseUrl}/forgot-password'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'email': email,
+      }),
+    ).timeout(timeoutDuration);
+
+    logger.d('Response status: ${response.statusCode}');
+    logger.d('Response body: ${response.body}');
+
+    if (response.statusCode == 200) {
+      return true; // Assuming a success response is 200
+    } else {
+      logger.e('Failed to send reset password link: ${response.body}');
+      return false;
+    }
+  } on SocketException {
+    logger.e('No internet connection');
+    throw Exception('No internet connection. Please try again.');
+  } on TimeoutException {
+    logger.e('Reset password request timed out');
+    throw Exception('Request timed out. Please try again.');
+  } catch (e, stackTrace) {
+    logger.e('Exception during reset password: $e', error: e, stackTrace: stackTrace);
+    return false;
+  }
+}
+
 
   // Register child function removed and moved to a separate service file
 

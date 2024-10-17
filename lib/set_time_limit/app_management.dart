@@ -77,7 +77,7 @@ class AppManagementState extends State<AppManagement> {
   }
 
   void toggleAllowedStatus(int index, bool isUserApp) async {
-    List<Map<String, dynamic>> apps = isUserApp ? userApps : systemApps; // Determine which list to modify
+    List<Map<String, dynamic>> apps = isUserApp ? userApps : systemApps; 
     bool isAllowed = apps[index]['is_allowed'] == true;
     bool newStatus = !isAllowed;
 
@@ -143,7 +143,7 @@ class AppManagementState extends State<AppManagement> {
       _logger.warning('Unexpected decision result');
     }
   }
-
+//-----------
   void openAppTogglePrompt(String appId, String appName) {
     _logger.info('Opening AppTogglePrompt for $appName');
     showDialog(
