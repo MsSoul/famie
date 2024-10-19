@@ -52,7 +52,7 @@ class ScreenTimeLimitScreenState extends State<ScreenTimeLimitScreen> {
                   // Show the SettingsWidget only if a child is selected
                   child: selectedChildId != null
                       ? SettingsWidget(childId: selectedChildId!, parentId: widget.parentId)  // Pass both childId and parentId
-                      : const Center(child: Text('Please select a child')),
+                      : const Center(child: Text('No Child Added Yet.')),
                 ),
               ],
             ),

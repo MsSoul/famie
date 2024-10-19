@@ -1,5 +1,4 @@
 // filename: settings_widget.dart
-// filename: settings_widget.dart
 import 'package:flutter/material.dart';
 import 'time_management.dart'; // Adjust this import to your file structure
 import 'app_management.dart'; // Adjust this import to your file structure

@@ -1,7 +1,7 @@
 // filename:home.dart
 // filename: home.dart
 import 'package:flutter/material.dart';
-import 'design/theme.dart'; // Ensure you import the theme.dart file for customAppBar
+import 'design/theme.dart'; 
 import 'child_profile/scan_child.dart';
 import 'dashboard/dashboard_screen.dart';
 import 'set_time_limit/screentimelimit.dart';
