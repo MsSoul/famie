@@ -96,7 +96,8 @@ class ApiService {
       return {'success': false, 'message': 'An error occurred'};
     }
   }
-  // Add the reset password function
+
+// Add the reset password function
 Future<bool> resetPassword(String email) async {
   if (!_isValidEmail(email)) {
     logger.e('Invalid email format');
@@ -116,7 +117,15 @@ Future<bool> resetPassword(String email) async {
     logger.d('Response body: ${response.body}');
 
     if (response.statusCode == 200) {
-      return true; // Assuming a success response is 200
+      final data = jsonDecode(response.body);
+      // Check if the response body contains a success message
+      if (data['message'] == 'Password reset link sent') {
+        logger.i('Reset password link sent successfully to $email');
+        return true;
+      } else {
+        logger.e('Failed to send reset password link: ${data['message']}');
+        return false;
+      }
     } else {
       logger.e('Failed to send reset password link: ${response.body}');
       return false;
@@ -132,9 +141,6 @@ Future<bool> resetPassword(String email) async {
     return false;
   }
 }
-
-
-  // Register child function removed and moved to a separate service file
 
   // Email validation
   bool _isValidEmail(String email) {
