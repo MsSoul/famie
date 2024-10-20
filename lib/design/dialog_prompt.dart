@@ -1,5 +1,4 @@
 //filename:design/dialog_prompts.dart (info for any parts of the apps)
-// filename: design/dialog_prompts.dart (info for any parts of the apps)
 import 'package:flutter/material.dart';
 
 class DialogPrompt extends StatelessWidget {
@@ -132,6 +131,73 @@ class DialogPrompt extends StatelessWidget {
       },
     );
   }
+  static Future<void> famkidInfoPrompt(
+  BuildContext context,
+  String parentId,
+  void Function(String childName, String childAvatar) onChildRegistered, // Correct function type
+) async {
+  final Color appBarColor = Theme.of(context).appBarTheme.backgroundColor ?? Colors.green[200]!;
+
+  return showDialog<void>(
+    context: context,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        title: const Text('Welcome to Famie!'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'As a parent, you can effectively manage your child\'s screen time. To add a child, please install the FamKid app.',
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 20),
+            // The image with border
+            Container(
+              decoration: BoxDecoration(
+                border: Border.all(color: appBarColor, width: 2), // Match border color with AppBar color
+                borderRadius: BorderRadius.circular(8.0),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Image.asset('assets/famie_icon-removebg-preview.png', height: 100),
+              ),
+            ),
+            // The "FAMKID" text outside the border
+            const SizedBox(height: 10),
+            Text(
+              'FAMKID',
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: appBarColor, // Apply AppBar color to the text
+              ),
+            ),
+            const SizedBox(height: 20),
+            const Text(
+              'It will generate a QR code for you to scan.',
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+        actions: <Widget>[
+          TextButton(
+            child: Text(
+              'OK',
+              style: TextStyle(color: appBarColor), // Match text color with AppBar color
+            ),
+            onPressed: () {
+              Navigator.of(context).pop(); // Close the dialog only
+            },
+          ),
+        ],
+        shape: RoundedRectangleBorder(
+          side: BorderSide(color: appBarColor, width: 2), // Match border color with AppBar color
+          borderRadius: BorderRadius.circular(8.0),
+        ),
+      );
+    },
+  );
+}
+
 }
 
 /*ilisan kay e update ang design
