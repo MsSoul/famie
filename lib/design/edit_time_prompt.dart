@@ -1,5 +1,4 @@
 //filename:design/edit_time_prompt.dart(for editing screen time schedule)
-///filename: design/edit_time_prompt.dart (for editing screen time schedule)
 import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
 

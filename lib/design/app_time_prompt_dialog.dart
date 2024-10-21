@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../services/app_time_service.dart';
 import '../design/app_toggle_prompt.dart';
-import '../design/dialog_prompt.dart'; // Import the Info dialog
-import '../design/schedule_prompt.dart'; // Import SchedulePrompt
+import '../design/dialog_prompt.dart'; 
+import '../design/schedule_prompt.dart'; 
 
 class AppTimePromptDialog extends StatefulWidget {
   final String appId;
@@ -265,6 +265,9 @@ void showSchedulePrompt(BuildContext context, String childId) {
     builder: (context) {
       return SchedulePrompt(
         childId: childId,
+        onClose: () {
+          Navigator.of(context).pop(); // Define what should happen when the dialog closes
+        },
       );
     },
   );

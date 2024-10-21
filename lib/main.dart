@@ -202,6 +202,29 @@ class LoginScreenState extends State<LoginScreen> with SingleTickerProviderState
                     return null;
                   },
                 ),
+                const SizedBox(height: 5),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end, // Align the "Forgot Password?" link to the right
+                  children: [
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const ForgotPasswordScreen()),
+                        );
+                      },
+                      child: Text(
+                        "Forgot Password?",
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14.0,
+                          color: appBarColor, // Use the AppBar color for this link
+                         // decoration: TextDecoration.underline,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
                 const SizedBox(height: 20),
                 ElevatedButton(
                   onPressed: _login,
@@ -237,13 +260,14 @@ class LoginScreenState extends State<LoginScreen> with SingleTickerProviderState
                         );
                       },
                       child: Text(
-                        "Create one",
+                        "Create one.",
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 16.0,
                           color: appBarColor, // Use the AppBar color
                           decoration: TextDecoration.underline,
                           fontFamily: appBarFontFamily, // Use the AppBar font
+                          decorationColor: appBarColor,
                         ),
                         overflow: TextOverflow.ellipsis,
                         softWrap: true,
@@ -251,28 +275,6 @@ class LoginScreenState extends State<LoginScreen> with SingleTickerProviderState
                     ),
                   ],
                 ),
-                Row(
-  mainAxisAlignment: MainAxisAlignment.center,
-  children: [
-    GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => const ForgotPasswordScreen()),
-        );
-      },
-      child: Text(
-        "Forgot Password?",
-        style: TextStyle(
-          fontWeight: FontWeight.bold,
-          fontSize: 16.0,
-          color: appBarColor, // Use the AppBar color for this link
-          decoration: TextDecoration.underline,
-        ),
-      ),
-    ),
-  ],
-),
               ],
             ),
           ),
@@ -281,7 +283,6 @@ class LoginScreenState extends State<LoginScreen> with SingleTickerProviderState
     );
   }
 }
-
 
 /*
 import 'package:flutter/material.dart';
