@@ -8,9 +8,9 @@ import '../services/config.dart';
 class ChildProfileProvider extends ChangeNotifier {
   final Logger logger = Logger();
   final List<Map<String, String>> _children = [];
-  bool _isDataLoaded = false;  // Check if data is already loaded
-  bool _isLoading = false;     // Loading state to manage loading spinner
-  String? _selectedChildId;    // Store selected child ID
+  bool _isDataLoaded = false;  
+  bool _isLoading = false;     
+  String? _selectedChildId;   
 
   List<Map<String, String>> get children => _children; // Getter for children
   bool get isLoading => _isLoading; // Getter for the loading state
