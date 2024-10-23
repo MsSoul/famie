@@ -24,39 +24,38 @@ class ScreenTimeLimitScreenState extends State<ScreenTimeLimitScreen> {
   Widget build(BuildContext context) {
     final childProfileProvider = Provider.of<ChildProfileProvider>(context);
 
+    // Function to handle when a child is selected
+    void onChildSelected(String childId) {
+      setState(() {
+        selectedChildId = childId;  // Update the selectedChildId
+      });
+      logger.i('Selected childId: $childId');
+    }
+
     // Load children profiles if they haven't been loaded yet
     if (!childProfileProvider.isLoading && childProfileProvider.children.isEmpty) {
       childProfileProvider.loadChildren(widget.parentId);
     }
 
-    // Check if there are children loaded
-    final hasChildren = childProfileProvider.children.isNotEmpty;
-
     return Scaffold(
       appBar: customAppBar(context, 'Set Screen Time', isLoggedIn: true, parentId: widget.parentId),
-      body: hasChildren
-          ? Column(
+      body: childProfileProvider.isLoading
+          ? const Center(child: CircularProgressIndicator())  // Show loader while loading
+          : Column(
               children: [
                 ChildProfileWidget(
                   parentId: widget.parentId,  // Passing the parentId here for fetching data
-                  onChildSelected: (childId) {
-                    setState(() {
-                      selectedChildId = childId;  // Update the selectedChildId
-                    });
-                    logger.i('Selected childId: $childId');
-                  },
+                  onChildSelected: onChildSelected,
                 ),
                 const SizedBox(height: 20),
                 Expanded(
+                  // Show the SettingsWidget only if a child is selected
                   child: selectedChildId != null
                       ? SettingsWidget(childId: selectedChildId!, parentId: widget.parentId)  // Pass both childId and parentId
-                      : const Center(child: Text('No Child Selected.')),
+                      : const Center(child: Text('No Child Added Yet.')),
                 ),
               ],
-            )
-          : childProfileProvider.isLoading
-              ? const Center(child: CircularProgressIndicator())  // Show loader while loading
-              : const Center(child: Text('No Child Added Yet.')),  // Display message if no children
+            ),
     );
   }
 }

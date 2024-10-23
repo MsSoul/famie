@@ -1,5 +1,4 @@
 // filename: time_management.dart
-
 import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
 import 'package:intl/intl.dart';
@@ -149,7 +148,7 @@ Future<void> _fetchTimeSlots() async {
     );
   }
 
-@override
+  @override
 Widget build(BuildContext context) {
   final Color appBarColor = Theme.of(context).appBarTheme.backgroundColor ?? Colors.green[200]!;
   final TextStyle fontStyle = Theme.of(context).textTheme.bodyLarge!.copyWith(
@@ -173,58 +172,51 @@ Widget build(BuildContext context) {
         ),
         const SizedBox(height: 10),
         Expanded(
-          child: timeSlots.isEmpty
-              ? Center(
-                  child: Text(
-                    'No child added yet.',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.grey),
-                  ),
-                )
-              : ListView.builder(
-                  itemCount: timeSlots.length,
-                  itemBuilder: (context, index) {
-                    final timeSlot = timeSlots[index];
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 2.0),
-                      child: Row(
-                        children: [
-                          Transform.scale(
-                            scale: 0.8, // Reduce the size of the toggle switch
-                            child: Switch(
-                              value: timeSlot['is_allowed'] == 'true',
-                              onChanged: (value) {
-                                _toggleAllowedStatus(index); // Toggle the allowed status
-                              },
-                              activeColor: Colors.white,
-                              activeTrackColor: Colors.green,
-                              inactiveThumbColor: Colors.white,
-                              inactiveTrackColor: Colors.grey[400],
-                            ),
-                          ),
-                          Expanded(
-                            flex: 6,
-                            child: Text(
-                              '${_formatTime(timeSlot['start_time']!)} - ${_formatTime(timeSlot['end_time']!)}',
-                              style: fontStyle,
-                            ),
-                          ),
-                          IconButton(
-                            icon: Icon(Icons.edit, color: appBarColor, size: 24),
-                            onPressed: () {
-                              _editTimeSlot(index); // Edit time slot on button click
-                            },
-                          ),
-                          IconButton(
-                            icon: Icon(Icons.delete, color: appBarColor, size: 24),
-                            onPressed: () {
-                              _deleteTimeSlot(index); // Delete time slot on button click
-                            },
-                          ),
-                        ],
+          child: ListView.builder(
+            itemCount: timeSlots.length,
+            itemBuilder: (context, index) {
+              final timeSlot = timeSlots[index];
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 2.0),
+                child: Row(
+                  children: [
+                    Transform.scale(
+                      scale: 0.8, // Reduce the size of the toggle switch (0.8 makes it 80% of its original size)
+                      child: Switch(
+                        value: timeSlot['is_allowed'] == 'true',
+                        onChanged: (value) {
+                          _toggleAllowedStatus(index); // Toggle the allowed status
+                        },
+                        activeColor: Colors.white,
+                        activeTrackColor: Colors.green,
+                        inactiveThumbColor: Colors.white,
+                        inactiveTrackColor: Colors.grey[400],
                       ),
-                    );
-                  },
+                    ),
+                    Expanded(
+                      flex: 6,
+                      child: Text(
+                        '${_formatTime(timeSlot['start_time']!)} - ${_formatTime(timeSlot['end_time']!)}',
+                        style: fontStyle,
+                      ),
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.edit, color: appBarColor, size: 24),
+                      onPressed: () {
+                        _editTimeSlot(index); // Edit time slot on button click
+                      },
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.delete, color: appBarColor, size: 24),
+                      onPressed: () {
+                        _deleteTimeSlot(index); // Delete time slot on button click
+                      },
+                    ),
+                  ],
                 ),
+              );
+            },
+          ),
         ),
         Center(
           child: ElevatedButton(
@@ -272,7 +264,6 @@ Widget build(BuildContext context) {
     ),
   );
 }
-
 
 }
 /* e modify kay magbutang ug no child added yet
