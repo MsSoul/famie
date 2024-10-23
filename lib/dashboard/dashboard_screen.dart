@@ -63,7 +63,7 @@ class DashboardScreen extends StatelessWidget {
           // Dashboard content based on child selection
           Expanded(
             child: childProfileProvider.selectedChildId == null
-                ? const Center(child: Text('No Child Added Yet'))
+                ? const Center(child: Text('Loading...'))
                 : Column(
                     children: [
                       Expanded(
