@@ -33,25 +33,26 @@ class _DashboardAppTimeState extends State<DashboardAppTime> {
   }
 
   Future<void> _loadData() async {
-    setState(() {
-      isLoading = true;
-      hasError = false;
-    });
+  setState(() {
+    isLoading = true;
+    hasError = false;
+    appTimeData = []; // Clear any existing data
+  });
 
-    try {
-      final appTime = await _service.fetchAppTime(widget.childId);
-      setState(() {
-        appTimeData = appTime;
-        isLoading = false;
-      });
-    } catch (e) {
-      setState(() {
-        hasError = true;
-        isLoading = false;
-      });
-      debugPrint("Error loading app time data: $e");
-    }
+  try {
+    final appTime = await _service.fetchAppTime(widget.childId);
+    setState(() {
+      appTimeData = appTime ?? [];
+      isLoading = false;
+    });
+  } catch (e) {
+    setState(() {
+      hasError = true;
+      isLoading = false;
+    });
+    debugPrint("Error loading app time data: $e");
   }
+}
 
   @override
   Widget build(BuildContext context) {

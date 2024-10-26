@@ -1,3 +1,4 @@
+//filename:../dashboard/dashboard_screen_time.dart
 import 'package:flutter/material.dart';
 import '../services/dashboard_screentime_service.dart';
 import 'package:intl/intl.dart';
@@ -33,27 +34,31 @@ class DashboardScreenTimeState extends State<DashboardScreenTime> {
   }
 
   Future<void> _loadData() async {
+  setState(() {
+    isLoading = true;
+    hasError = false;
+    timeSchedule = []; // Clear any existing data
+    remainingTime = [];
+  });
+
+  try {
+    final schedule = await _service.fetchTimeSchedule(widget.childId);
+    final remaining = await _service.fetchRemainingTime(widget.childId);
+
     setState(() {
-      isLoading = true;
-      hasError = false;
+      timeSchedule = schedule?['time_slots'] ?? [];
+      remainingTime = remaining?['remaining_time'] ?? [];
+      isLoading = false;
     });
-
-    try {
-      final schedule = await _service.fetchTimeSchedule(widget.childId);
-      final remaining = await _service.fetchRemainingTime(widget.childId);
-
-      setState(() {
-        timeSchedule = schedule?['time_slots'] ?? [];
-        remainingTime = remaining?['remaining_time'] ?? [];
-        isLoading = false;
-      });
-    } catch (e) {
-      setState(() {
-        hasError = true;
-        isLoading = false;
-      });
-    }
+  } catch (e) {
+    setState(() {
+      hasError = true;
+      isLoading = false;
+    });
+    debugPrint("Error loading screen time data: $e");
   }
+}
+
 
   String formatTime(String time24) {
     final dateTime = DateFormat("HH:mm").parse(time24);
