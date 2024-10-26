@@ -1,5 +1,4 @@
 // filename:dashboard/dashboard_app_time.dart
-// filename: dashboard/dashboard_app_time.dart
 import 'package:flutter/material.dart';
 import '../services/dashboard_app_time_service.dart';
 import 'package:intl/intl.dart'; // For time formatting
@@ -22,9 +21,6 @@ class _DashboardAppTimeState extends State<DashboardAppTime> {
   @override
   void initState() {
     super.initState();
-    _service.onAppTimeUpdate = _handleAppTimeUpdate;
-    _service.onRemainingAppTimeUpdate = _handleRemainingAppTimeUpdate;
-    _service.openWebSocket();
     _loadData();
   }
 
@@ -34,12 +30,6 @@ class _DashboardAppTimeState extends State<DashboardAppTime> {
     if (oldWidget.childId != widget.childId) {
       _loadData();
     }
-  }
-
-  @override
-  void dispose() {
-    _service.closeWebSocket();
-    super.dispose();
   }
 
   Future<void> _loadData() async {
@@ -59,29 +49,18 @@ class _DashboardAppTimeState extends State<DashboardAppTime> {
         hasError = true;
         isLoading = false;
       });
+      debugPrint("Error loading app time data: $e");
     }
-  }
-
-  void _handleAppTimeUpdate(List<dynamic> updatedData) {
-    setState(() {
-      appTimeData = updatedData.cast<Map<String, dynamic>>(); // Cast to appropriate type
-    });
-  }
-
-  void _handleRemainingAppTimeUpdate(List<dynamic> updatedData) {
-    setState(() {
-      appTimeData = updatedData.cast<Map<String, dynamic>>(); // Cast to appropriate type
-    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(left: 16.0, right: 16.0, bottom: 16.0), // Remove top padding
+      padding: const EdgeInsets.only(left: 16.0, right: 16.0, bottom: 16.0),
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.grey[200], // Light gray background color
-          borderRadius: BorderRadius.circular(15.0), // Rounded corners
+          color: Colors.grey[200],
+          borderRadius: BorderRadius.circular(15.0),
         ),
         child: Padding(
           padding: const EdgeInsets.all(16.0),
@@ -119,7 +98,7 @@ class _DashboardAppTimeState extends State<DashboardAppTime> {
       padding: const EdgeInsets.all(16.0),
       decoration: BoxDecoration(
         border: Border.all(
-          color: Theme.of(context).appBarTheme.backgroundColor ?? Colors.green, // Use app bar color for no data view
+          color: Theme.of(context).appBarTheme.backgroundColor ?? Colors.green,
           width: 2.0,
         ),
         borderRadius: BorderRadius.circular(8.0),
@@ -148,9 +127,9 @@ class _DashboardAppTimeState extends State<DashboardAppTime> {
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white, // White background color for the app time card
+          color: Colors.white,
           border: Border.all(
-            color: Theme.of(context).appBarTheme.backgroundColor ?? Colors.green, // Match the border color with app bar color
+            color: Theme.of(context).appBarTheme.backgroundColor ?? Colors.green,
             width: 2.0,
           ),
           borderRadius: BorderRadius.circular(8.0),
@@ -175,7 +154,7 @@ class _DashboardAppTimeState extends State<DashboardAppTime> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        "${_formatTime(slot['start_time'])} - ${_formatTime(slot['end_time'])}",
+                        "${_formatTime(slot['start_time'] ?? '')} - ${_formatTime(slot['end_time'] ?? '')}",
                         style: const TextStyle(fontSize: 14),
                       ),
                       const SizedBox(height: 4),
@@ -196,8 +175,13 @@ class _DashboardAppTimeState extends State<DashboardAppTime> {
 
   // Helper method to format time to 12-hour format
   String _formatTime(String time24) {
-    final dateTime = DateFormat("HH:mm").parse(time24);
-    return DateFormat("hh:mm a").format(dateTime);
+    try {
+      final dateTime = DateFormat("HH:mm").parse(time24);
+      return DateFormat("hh:mm a").format(dateTime);
+    } catch (e) {
+      debugPrint("Error formatting time: $e");
+      return "--:--"; // Fallback if parsing fails
+    }
   }
 
   // Helper method to format remaining time
@@ -207,6 +191,7 @@ class _DashboardAppTimeState extends State<DashboardAppTime> {
     return "${hours}h ${minutes}m";
   }
 }
+
 
 /*
 import 'package:flutter/material.dart';
