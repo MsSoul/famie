@@ -1,5 +1,4 @@
 // filename: design/schedule_prompt.dart
-// filename: design/schedule_prompt.dart
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:logger/logger.dart'; // Import logger

@@ -197,8 +197,119 @@ class DialogPrompt extends StatelessWidget {
     },
   );
 }
+// New method for showing delete confirmation
+static Future<void> showDeleteConfirmation(BuildContext context, String appName, VoidCallback onDelete) async {
+  final Color actionColor = Theme.of(context).appBarTheme.backgroundColor ?? Colors.green[400]!; // Get action color from theme
 
+  return showDialog<void>(
+    context: context,
+    barrierDismissible: false,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        title: const Text(
+          'Delete Confirmation',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        content: Text(
+          'Are you sure you want to delete the schedule for $appName? This action cannot be undone.',
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+          side: BorderSide(color: actionColor, width: 2), // Add border color and width
+        ),
+        actions: <Widget>[
+          TextButton(
+            child: Text(
+              'Cancel',
+              style: TextStyle(color: actionColor), // Use action color for text
+            ),
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+          ),
+          TextButton(
+            child: Text(
+              'Delete',
+              style: TextStyle(color: actionColor), // Use action color for text
+            ),
+            onPressed: () {
+              Navigator.of(context).pop();
+              onDelete(); // Call the delete function
+            },
+          ),
+        ],
+      );
+    },
+  );
 }
+
+// Show an invalid schedule dialog
+static Future<void> showInvalidSchedule(BuildContext context) async {
+  final Color actionColor = Theme.of(context).appBarTheme.backgroundColor ?? Colors.green[400]!; // Get action color from theme
+
+  return showDialog<void>(
+    context: context,
+    barrierDismissible: true,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        title: const Text(
+          'Invalid Schedule',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        content: const Text(
+          'The schedule you are trying to set does not fit within the allowed time ranges. Please adjust the time.',
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+          side: BorderSide(color: actionColor, width: 2), // Add border color and width
+        ),
+        actions: <Widget>[
+          TextButton(
+            child: Text(
+              'OK',
+              style: TextStyle(color: actionColor), // Use action color for text
+            ),
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+          ),
+        ],
+      );
+    },
+  );
+}
+ // Method to show a success message
+  static Future<void> showSuccess(BuildContext context) async {
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: true,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text(
+            'Success',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          content: const Text(
+            'Congratulations! The time schedule has been successfully added.',
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+            side: BorderSide(color: Colors.green, width: 2),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('OK'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
 
 /*ilisan kay e update ang design
 import 'package:flutter/material.dart';

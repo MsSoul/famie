@@ -90,149 +90,157 @@ class AppTimePromptDialogState extends State<AppTimePromptDialog> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    final Color actionColor = Theme.of(context).appBarTheme.backgroundColor ?? Colors.green[400]!;
-    final TextStyle fontStyle = Theme.of(context).textTheme.bodyLarge!.copyWith(
-          fontWeight: FontWeight.bold,
-          fontSize: 16,
-        );
+Widget build(BuildContext context) {
+  final Color actionColor = Theme.of(context).appBarTheme.backgroundColor ?? Colors.green[400]!;
+  final TextStyle fontStyle = Theme.of(context).textTheme.bodyLarge!.copyWith(
+        fontWeight: FontWeight.bold,
+        fontSize: 16,
+      );
 
-    return Dialog(
-      backgroundColor: Colors.transparent,
-      shape: RoundedRectangleBorder(
-        side: BorderSide(color: actionColor, width: 2),
+  return Dialog(
+    backgroundColor: Colors.transparent,
+    shape: RoundedRectangleBorder(
+      side: BorderSide(color: actionColor, width: 2),
+      borderRadius: BorderRadius.circular(10),
+    ),
+    child: Container(
+      padding: const EdgeInsets.all(15.0),
+      decoration: BoxDecoration(
+        color: Colors.white,
         borderRadius: BorderRadius.circular(10),
       ),
-      child: Container(
-        padding: const EdgeInsets.all(15.0),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Text(
-                    'App Time Schedule for ${widget.appName}',
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Text(
+                  'App Time Schedule for ${widget.appName}',
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
+                  ),
+                  overflow: TextOverflow.visible,
+                  softWrap: true,
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.close, color: Colors.red),
+                onPressed: () => Navigator.of(context).pop(),
+              ),
+            ],
+          ),
+          const SizedBox(height: 5),
+          isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : timeSlots.isEmpty
+                  ? const Center(child: Text("No time slots available."))
+                  : ListView.builder(
+                      shrinkWrap: true,
+                      itemCount: timeSlots.length,
+                      itemBuilder: (context, index) {
+                        final timeSlot = timeSlots[index];
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 1.0),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                '${_formatTime(timeSlot['start_time']!)} - ${_formatTime(timeSlot['end_time']!)}',
+                                style: fontStyle,
+                              ),
+                              IconButton(
+                                icon: Icon(Icons.delete, color: actionColor),
+                                onPressed: () {
+                                  DialogPrompt.showDeleteConfirmation(
+                                    context,
+                                    widget.appName,
+                                    () async {
+                                      // Perform the deletion
+                                      await _deleteTimeSlot(index);
+                                    },
+                                  );
+                                },
+                              ),
+                            ],
+                          ),
+                        );
+                      },
                     ),
-                    overflow: TextOverflow.visible,
-                    softWrap: true,
+          const SizedBox(height: 5),
+          Center(
+            child: ElevatedButton(
+              onPressed: _addNewTimeSlot,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: actionColor,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+              ),
+              child: const Icon(Icons.add),
+            ),
+          ),
+          const SizedBox(height: 10),
+          Center(
+            child: Text(
+              'Total Set Schedules: ${timeSlots.length}',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: actionColor),
+            ),
+          ),
+          const SizedBox(height: 10),
+          Center(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Flexible(
+                  child: ElevatedButton(
+                    onPressed: () {
+                      DialogPrompt.show(context);
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Theme.of(context).elevatedButtonTheme.style?.backgroundColor?.resolve({}),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      minimumSize: const Size(120, 40),
+                    ),
+                    child: const Text('Info', textAlign: TextAlign.center),
                   ),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.close, color: Colors.red),
-                  onPressed: () => Navigator.of(context).pop(),
+                const SizedBox(width: 10),
+                Flexible(
+                  child: ElevatedButton(
+                    onPressed: () {
+                      showSchedulePrompt(context, widget.childId);
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: actionColor,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      minimumSize: const Size(120, 40),
+                    ),
+                    child: const Text(
+                      'See\nSchedules',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 14),
+                    ),
+                  ),
                 ),
               ],
             ),
-            const SizedBox(height: 5),
-            isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : timeSlots.isEmpty
-                    ? const Center(child: Text("No time slots available."))
-                    : ListView.builder(
-                        shrinkWrap: true,
-                        itemCount: timeSlots.length,
-                        itemBuilder: (context, index) {
-                          final timeSlot = timeSlots[index];
-                          return Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 1.0),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  '${_formatTime(timeSlot['start_time']!)} - ${_formatTime(timeSlot['end_time']!)}',
-                                  style: fontStyle,
-                                ),
-                                IconButton(
-                                  icon: Icon(Icons.delete, color: actionColor),
-                                  onPressed: () => _deleteTimeSlot(index),
-                                ),
-                              ],
-                            ),
-                          );
-                        },
-                      ),
-            const SizedBox(height: 5),
-            Center(
-              child: ElevatedButton(
-                onPressed: _addNewTimeSlot,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: actionColor,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-                ),
-                child: const Icon(Icons.add),
-              ),
-            ),
-            const SizedBox(height: 10),
-            Center(
-              child: Text(
-                'Total Set Schedules: ${timeSlots.length}',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: actionColor),
-              ),
-            ),
-            const SizedBox(height: 10),
-            Center(
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Flexible(
-                    child: ElevatedButton(
-                      onPressed: () {
-                        DialogPrompt.show(context);
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Theme.of(context).elevatedButtonTheme.style?.backgroundColor?.resolve({}),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        minimumSize: const Size(120, 40),
-                      ),
-                      child: const Text('Info', textAlign: TextAlign.center),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Flexible(
-                    child: ElevatedButton(
-                      onPressed: () {
-                        showSchedulePrompt(context, widget.childId);
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: actionColor,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        minimumSize: const Size(120, 40),
-                      ),
-                      child: const Text(
-                        'See\nSchedules',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(fontSize: 14),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 10),
-          ],
-        ),
+          ),
+          const SizedBox(height: 10),
+        ],
       ),
-    );
-  }
-}
+    ),
+  );
+}}
 
 // Call the dialog with opacity
 void showAppTimePromptDialog(BuildContext context, String appId, String childId, String appName) {
