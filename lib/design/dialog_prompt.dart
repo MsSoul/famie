@@ -294,7 +294,7 @@ static Future<void> showInvalidSchedule(BuildContext context) async {
           ),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(10),
-            side: BorderSide(color: Colors.green, width: 2),
+            side: const BorderSide(color: Colors.green, width: 2),
           ),
           actions: <Widget>[
             TextButton(

@@ -1,5 +1,4 @@
-//filename:set_time_limit/time_schedule_dialog
-//filename:set_time_limit/time_schedule_dialog
+//filename:famie/lib/set_time_limit/time_schedule_dialog
 import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
 import '../services/time_service.dart';

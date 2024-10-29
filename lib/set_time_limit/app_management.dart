@@ -1,5 +1,4 @@
-// filename: app_management.dart (display sa apps in)
-// filename: app_management.dart (display sa apps in)
+// filename: famie/lib/set_time_limit/app_management.dart (display sa apps in)
 import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
 import '../design/app_toggle_prompt.dart';
