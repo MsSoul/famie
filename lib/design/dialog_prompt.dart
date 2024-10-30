@@ -278,36 +278,42 @@ static Future<void> showInvalidSchedule(BuildContext context) async {
     },
   );
 }
- // Method to show a success message
-  static Future<void> showSuccess(BuildContext context) async {
-    return showDialog<void>(
-      context: context,
-      barrierDismissible: true,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text(
-            'Success',
-            style: TextStyle(fontWeight: FontWeight.bold),
+ /// Method to show a success message
+static Future<void> showSuccess(BuildContext context) async {
+  return showDialog<void>(
+    context: context,
+    barrierDismissible: true,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        title: const Text(
+          'Success',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        content: const Text(
+          'Congratulations! The time schedule has been successfully added.',
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+          side: const BorderSide(color: Colors.green, width: 2),
+        ),
+        actions: <Widget>[
+          TextButton(
+            child: const Text('OK'),
+            onPressed: () {
+              Navigator.of(context).pop(); // Close the dialog
+              Navigator.of(context).pop(); // Pop the current screen if needed
+              // Optionally, navigate to a specific screen
+              // Navigator.of(context).pushReplacement(
+              //   MaterialPageRoute(builder: (context) => YourTargetScreen()),
+              // );
+            },
           ),
-          content: const Text(
-            'Congratulations! The time schedule has been successfully added.',
-          ),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-            side: const BorderSide(color: Colors.green, width: 2),
-          ),
-          actions: <Widget>[
-            TextButton(
-              child: const Text('OK'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
-        );
-      },
-    );
-  }
+        ],
+      );
+    },
+  );
+}
+
 }
 
 

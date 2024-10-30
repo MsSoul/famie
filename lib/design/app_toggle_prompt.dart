@@ -1,9 +1,10 @@
-//filename:design/app_toggle_prompt.dart(setting app time schedule)
+// filename: design/app_toggle_prompt.dart (setting app time schedule)
+// filename: design/app_toggle_prompt.dart (setting app time schedule)
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import '../services/app_toggle_service.dart'; // Import your service
 import 'dialog_prompt.dart'; // Import the Dialog Prompt widget
 import 'package:logger/logger.dart';
+import 'package:intl/intl.dart';
 
 
 class AppTogglePrompt extends StatefulWidget {
@@ -11,14 +12,13 @@ class AppTogglePrompt extends StatefulWidget {
   final String childId;
   final String appName;
 
-
   const AppTogglePrompt({
     super.key,
     required this.appId,
     required this.childId,
     required this.appName,
   });
- 
+
   @override
   AppTogglePromptState createState() => AppTogglePromptState();
 }
@@ -36,9 +36,9 @@ class AppTogglePromptState extends State<AppTogglePrompt> {
         return Theme(
           data: Theme.of(context).copyWith(
             colorScheme: ColorScheme.light(
-              primary: Theme.of(context).appBarTheme.backgroundColor ?? Colors.green, // Use app bar color
-              onPrimary: Colors.white, // Text color on selected items
-              onSurface: Colors.black, // Default text color on surface
+              primary: Theme.of(context).appBarTheme.backgroundColor ?? Colors.green,
+              onPrimary: Colors.white,
+              onSurface: Colors.black,
             ),
           ),
           child: child!,
@@ -56,101 +56,60 @@ class AppTogglePromptState extends State<AppTogglePrompt> {
     }
   }
 
-  void saveTimeSchedule() {
+  void saveTimeSchedule() async {
   if (startTime != null && endTime != null) {
-    String startTimeString = DateFormat.Hm().format(
-      DateTime(0, 0, 0, startTime!.hour, startTime!.minute),
-    );
-    String endTimeString = DateFormat.Hm().format(
-      DateTime(0, 0, 0, endTime!.hour, endTime!.minute),
-    );
+    // Convert TimeOfDay to DateTime for today
+    DateTime now = DateTime.now();
+    DateTime startDateTime = DateTime(now.year, now.month, now.day, startTime!.hour, startTime!.minute);
+    DateTime endDateTime = DateTime(now.year, now.month, now.day, endTime!.hour, endTime!.minute);
 
-    // Check if the schedule is valid
-    if (!_isScheduleValid(startTime!, endTime!)) {
-      DialogPrompt.showInvalidSchedule(context); // Show the invalid schedule prompt
-      return; // Exit the method if the schedule is invalid
-    }
-
-    // Prepare time slots for the request
     List<Map<String, String>> timeSlots = [
-      {'start_time': startTimeString, 'end_time': endTimeString}
+      {
+        // Format the times to 24-hour format
+        'start_time': DateFormat.Hm().format(startDateTime), // e.g., "13:00"
+        'end_time': DateFormat.Hm().format(endDateTime),     // e.g., "14:00"
+      }
     ];
 
-    // Show a loading indicator or prompt before saving
-    DialogPrompt.showSuccess(context); // Optional: Show a loading prompt
-    Navigator.of(context).pop();
-    
-    // Use your service to save the schedule
-    AppToggleService().saveTimeSchedule(
-      widget.appName,
-      widget.childId,
-      timeSlots,
-    ).then((_) {
-      // Log successful save action
-      logger.i('Time schedule saved successfully.'); // Replace print with logger
-      Navigator.of(context).pop(); // Close the loading prompt
-      DialogPrompt.showSuccess(context); // Show success prompt after saving
-      Navigator.of(context).pop(); // Close the dialog again if needed
-    }).catchError((error) {
-      // Log error if something goes wrong
-      logger.e('Error saving schedule: $error'); // Replace print with logger
-      Navigator.of(context).pop(); // Close the loading prompt
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error saving schedule: $error')),
-      );
-    });
+    logger.i('Preparing to validate time slots: $timeSlots');
+
+    try {
+      // Fetch allowed time slots from your backend
+      List<Map<String, String>> allowedSlots = await AppToggleService().fetchAllowedTimeSlots(widget.childId);
+      logger.i('Allowed slots fetched: $allowedSlots');
+
+      // Validate the selected schedule against allowed slots
+      bool isValid = AppToggleService().isScheduleValid(timeSlots, allowedSlots);
+      logger.i('Schedule validity check: $isValid');
+
+      if (!isValid) {
+        DialogPrompt.showInvalidSchedule(context);
+        logger.w('Schedule is invalid.');
+        return;
+      }
+
+      DialogPrompt.showLoading(context); // Show loading dialog
+      logger.i('Attempting to send save request for time schedule...');
+
+      // Save the schedule
+      await AppToggleService().saveTimeSchedule(widget.appName, widget.childId, timeSlots);
+      logger.i('Time schedule save request completed successfully.');
+
+      Navigator.of(context).pop(); // Close loading dialog
+      DialogPrompt.showSuccess(context);
+
+    } catch (error) {
+      // Handle specific error types if needed, or just log and show a generic error
+      logger.e('Failed to save schedule: $error');
+      Navigator.of(context).pop(); // Close loading dialog if there's an error
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error saving schedule: $error')));
+    }
   } else {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Please select both start and end times')),
-    );
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select both start and end times')));
+    logger.w('No start or end time selected.');
   }
 }
 
-
-
-  bool _isScheduleValid(TimeOfDay start, TimeOfDay end) {
-    // Define your allowed time ranges (example: 9 AM to 5 PM)
-    const allowedStart = TimeOfDay(hour: 9, minute: 0); // 9:00 AM
-    const allowedEnd = TimeOfDay(hour: 17, minute: 0); // 5:00 PM
-
-    // Check if the selected times are within the allowed range
-    final startInRange = start.hour > allowedStart.hour || 
-                         (start.hour == allowedStart.hour && start.minute >= allowedStart.minute);
-    final endInRange = end.hour < allowedEnd.hour || 
-                       (end.hour == allowedEnd.hour && end.minute <= allowedEnd.minute);
-    
-    return startInRange && endInRange && (end.hour > start.hour || 
-           (end.hour == start.hour && end.minute > start.minute)); // Ensure end time is after start time
-  }
-
-  void _showSuccessPrompt() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text(
-            'Success',
-            style: TextStyle(fontWeight: FontWeight.bold),
-          ),
-          content: const Text(
-            'Congratulations! The time schedule has been successfully added.',
-          ),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-            side: BorderSide(color: Colors.green, width: 2),
-          ),
-          actions: <Widget>[
-            TextButton(
-              child: const Text('OK'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
-        );
-      },
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -158,18 +117,18 @@ class AppTogglePromptState extends State<AppTogglePrompt> {
 
     return AlertDialog(
       contentPadding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
-      backgroundColor: Colors.white, // Solid white background
+      backgroundColor: Colors.white,
       shape: RoundedRectangleBorder(
-        side: BorderSide(color: appBarColor, width: 2), // Border matching app bar color
+        side: BorderSide(color: appBarColor, width: 2),
         borderRadius: BorderRadius.circular(15.0),
       ),
       title: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           IconButton(
-            icon: const Icon(Icons.close, color: Colors.red), // Red X button
-            padding: const EdgeInsets.all(0), // Reduce padding
-            iconSize: 32, // Thicker icon size
+            icon: const Icon(Icons.close, color: Colors.red),
+            padding: const EdgeInsets.all(0),
+            iconSize: 32,
             onPressed: () {
               Navigator.of(context).pop();
             },
@@ -178,18 +137,18 @@ class AppTogglePromptState extends State<AppTogglePrompt> {
             child: Text(
               'Set Time Schedule for ${widget.appName}',
               style: const TextStyle(
-                fontSize: 20.0, // Larger font for the title
+                fontSize: 20.0,
                 fontWeight: FontWeight.bold,
-                color: Colors.black, // Black for the title text
-                fontFamily: 'Georgia', // Using the app's theme font
+                color: Colors.black,
+                fontFamily: 'Georgia',
               ),
               textAlign: TextAlign.center,
             ),
           ),
           IconButton(
-            icon: Icon(Icons.check, color: appBarColor), // Check button with appBarColor
-            padding: const EdgeInsets.all(0), // Reduce padding
-            iconSize: 32, // Thicker icon size
+            icon: Icon(Icons.check, color: appBarColor),
+            padding: const EdgeInsets.all(0),
+            iconSize: 32,
             onPressed: saveTimeSchedule,
           ),
         ],
@@ -213,18 +172,18 @@ class AppTogglePromptState extends State<AppTogglePrompt> {
                   _selectTime(context, true);
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.white, // White background for the button
-                  side: BorderSide(color: appBarColor), // Border matching app bar color
+                  backgroundColor: Colors.white,
+                  side: BorderSide(color: appBarColor),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
                   ),
                 ),
                 child: Text(
-                  startTime != null ? startTime!.format(context) : 'Set Time', // Updated button text
+                  startTime != null ? startTime!.format(context) : 'Set Time',
                   style: TextStyle(
                     color: appBarColor,
-                    fontSize: 18, // Larger font size
-                    fontWeight: FontWeight.bold, // Bold font style
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
               ),
@@ -254,7 +213,7 @@ class AppTogglePromptState extends State<AppTogglePrompt> {
                   ),
                 ),
                 child: Text(
-                  endTime != null ? endTime!.format(context) : 'Set Time', // Updated button text
+                  endTime != null ? endTime!.format(context) : 'Set Time',
                   style: TextStyle(
                     color: appBarColor,
                     fontSize: 18,
@@ -264,15 +223,13 @@ class AppTogglePromptState extends State<AppTogglePrompt> {
               ),
             ],
           ),
-          const SizedBox(height: 20), // Add spacing between sections
-
-          // Display the dialog prompt below the end time
+          const SizedBox(height: 20),
           ElevatedButton(
             onPressed: () {
               DialogPrompt.show(context); // Show the dialog with information
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: appBarColor, // Correct parameter for button background
+              backgroundColor: appBarColor,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(10),
               ),
@@ -282,7 +239,7 @@ class AppTogglePromptState extends State<AppTogglePrompt> {
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
-                color: Colors.white, // White text color
+                color: Colors.white,
               ),
             ),
           )
@@ -291,6 +248,8 @@ class AppTogglePromptState extends State<AppTogglePrompt> {
     );
   }
 }
+
+
 
 /*e modify kay mag buttang ug dialog prompt 
 import 'package:flutter/material.dart';
