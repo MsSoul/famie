@@ -2,10 +2,10 @@
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:logger/logger.dart';
-import 'config.dart';  // Import your config file for baseUrl
+import 'config.dart';  
 
 class DashboardScreenTimeService {
-  final Logger logger = Logger();  // Initialize Logger
+  final Logger logger = Logger();  
 
   // Fetch time schedule (initial load)
   Future<Map<String, dynamic>?> fetchTimeSchedule(String childId) async {
