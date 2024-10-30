@@ -88,20 +88,18 @@ class AppTogglePromptState extends State<AppTogglePrompt> {
         return;
       }
 
-      DialogPrompt.showLoading(context); // Show loading dialog
       logger.i('Attempting to send save request for time schedule...');
 
       // Save the schedule
       await AppToggleService().saveTimeSchedule(widget.appName, widget.childId, timeSlots);
       logger.i('Time schedule save request completed successfully.');
 
-      Navigator.of(context).pop(); // Close loading dialog
+      Navigator.of(context).pop(); // Close dialog
       DialogPrompt.showSuccess(context);
 
     } catch (error) {
       // Handle specific error types if needed, or just log and show a generic error
       logger.e('Failed to save schedule: $error');
-      Navigator.of(context).pop(); // Close loading dialog if there's an error
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error saving schedule: $error')));
     }
   } else {

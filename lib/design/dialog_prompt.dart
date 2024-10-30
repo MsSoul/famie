@@ -280,6 +280,9 @@ static Future<void> showInvalidSchedule(BuildContext context) async {
 }
  /// Method to show a success message
 static Future<void> showSuccess(BuildContext context) async {
+  // Get the action color from the theme
+  final Color actionColor = Theme.of(context).appBarTheme.backgroundColor ?? Colors.green[400]!;
+
   return showDialog<void>(
     context: context,
     barrierDismissible: true,
@@ -298,14 +301,13 @@ static Future<void> showSuccess(BuildContext context) async {
         ),
         actions: <Widget>[
           TextButton(
-            child: const Text('OK'),
+            child: Text(
+              'OK',
+              style: TextStyle(color: actionColor), // Set the color for the OK text
+            ),
             onPressed: () {
               Navigator.of(context).pop(); // Close the dialog
-              Navigator.of(context).pop(); // Pop the current screen if needed
-              // Optionally, navigate to a specific screen
-              // Navigator.of(context).pushReplacement(
-              //   MaterialPageRoute(builder: (context) => YourTargetScreen()),
-              // );
+              Navigator.of(context).pop(); // Optionally, pop the previous screen if needed
             },
           ),
         ],
