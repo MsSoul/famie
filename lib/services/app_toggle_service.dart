@@ -1,5 +1,5 @@
 //filename:services/app_toggle_service.dart (sa toggle service pag save sa data sa toggle)
-// filename: services/app_toggle_service.dart (service for toggling and saving schedule data)
+/// filename: services/app_toggle_service.dart (service for toggling and saving schedule data)
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'config.dart';
@@ -87,29 +87,30 @@ class AppToggleService {
       final startProvided = parseTime(provided['start_time']!);
       final endProvided = parseTime(provided['end_time']!);
 
+      bool isValid = false;
+
       for (var allowed in allowedSlots) {
-        final startAllowed = TimeOfDay(
-          hour: int.parse(allowed['start_time']!.split(':')[0]),
-          minute: int.parse(allowed['start_time']!.split(':')[1]),
-        );
-        final endAllowed = TimeOfDay(
-          hour: int.parse(allowed['end_time']!.split(':')[0]),
-          minute: int.parse(allowed['end_time']!.split(':')[1]),
-        );
+        final startAllowed = parseTime(allowed['start_time']!);
+        final endAllowed = parseTime(allowed['end_time']!);
 
         // Check if the provided time slot falls within the allowed time slot
         if ((startProvided.hour > startAllowed.hour ||
             (startProvided.hour == startAllowed.hour && startProvided.minute >= startAllowed.minute)) &&
             (endProvided.hour < endAllowed.hour ||
             (endProvided.hour == endAllowed.hour && endProvided.minute <= endAllowed.minute))) {
-          return true; // Valid schedule found
+          isValid = true; // Valid schedule found
+          break; // Exit loop once a valid slot is found
         }
       }
+
+      if (!isValid) {
+        return false; // Invalid slot found
+      }
     }
-    return false; // No valid schedules found
+    return true; // All provided slots are valid
   }
 
-  Future<void> saveTimeSchedule(String appName, String childId, List<Map<String, String>> timeSlots) async {
+  Future<void> saveTimeSchedule(String appName, String childId, List<Map<String, String>> newTimeSlots) async {
     final url = Uri.parse('${Config.baseUrl}/api/app_time_management/save_schedule/$appName');
     final headers = {
       'Content-Type': 'application/json',
@@ -119,11 +120,13 @@ class AppToggleService {
     _logger.info('Preparing to send request to save time schedule with the following data:');
     _logger.info('Child ID: $childId');
     _logger.info('App Name: $appName');
-    _logger.info('Time Slots: ${timeSlots.map((slot) => slot.toString()).toList()}');
+    _logger.info('New Time Slots: ${newTimeSlots.map((slot) => slot.toString()).toList()}');
 
-    // Validate the time slots before saving
+    // Fetch allowed slots for validation
     final allowedSlots = await fetchAllowedTimeSlots(childId);
-    if (!isScheduleValid(timeSlots, allowedSlots)) {
+
+    // Validate the new time slots against allowed time slots
+    if (!isScheduleValid(newTimeSlots, allowedSlots)) {
       _logger.warning('Provided time slots do not fall within allowed screen time ranges');
       throw Exception('Provided time slots do not fall within allowed screen time ranges');
     }
@@ -131,12 +134,10 @@ class AppToggleService {
     // Prepare body data for the backend
     final body = jsonEncode({
       'childId': childId,
-      'timeSlots': timeSlots.map((slot) {
+      'timeSlots': newTimeSlots.map((slot) {
         return {
           'start_time': slot['start_time'],
           'end_time': slot['end_time'],
-          // Optionally add slot_identifier if you have it in your UI
-          // 'slot_identifier': slot['slot_identifier'] ?? new ObjectId(), // If you have slot identifier logic
         };
       }).toList(),
     });
